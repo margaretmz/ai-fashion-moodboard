@@ -1,2 +1,2 @@
-# ai-fashion-moodboard
-Generate unique fashion moodboards to find your next design inspiration.
+# AI Fashion Moodboard
+A tool that helps generate unique fashion moodboards to find your next design inspiration.
