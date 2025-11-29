@@ -1,2 +1,2 @@
-gradio
+gradio==5.50
 google-genai>=1.51.0

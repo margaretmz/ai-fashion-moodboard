@@ -1,0 +1,29 @@
+**Subject:**
+Fashion Moodboard for {SUBJECT_PLACEHOLDER}
+
+**[CRITICAL CONSTRAINTS]**
+**NO TEXT:** The final output must not contain any text, labels, letters, or placeholder words inside the grid boxes. All placeholders must be replaced by visual imagery.
+
+**[Layout Configuration]**
+Reference Layout: Follow the exact geometric 2x4 grid structure shown in the attached image.
+Canvas Size: 1440x1024
+Spacing: Clean, consistent white spacing between all 8 panels.
+
+**[Row 1: The Look (Top Half)]**
+Composition: 4 distinct vertical portrait images (Aspect Ratio approx 2:4).
+Borders: Thin. Black. Solid. Pointy borders without styles around each image.
+Visual Weight: These images must appear significantly taller than the bottom row.
+Content: Full-body or 3/4 editorial shots of fashion models wearing earthy, textural garments related to the theme.
+
+**[Row 2: The Details (Bottom Half)]**
+Composition: 4 square images (Aspect Ratio 1:1).
+Borders: Thin. Black. Solid. Pointy borders without styles around each image.
+Image 1 (Leftmost): Detailed close-up product shot of a key accessory
+Image 2 (Center-Left): Detailed close-up product shot of footwear or secondary metal/stone jewelry.
+Image 3 (Center-Right): Macro photography filling the frame with raw fabric texture
+Image 4 (Rightmost): A minimalist visual strip showing 5 distinct, solid earthy color swatches.
+
+**Notes**
+Quality: 4k resolution, high-detail texture, sharp focus.
+Layout: Ensure the four images in the Top Row appear significantly taller than the four square images in the Bottom Row, maintaining clean spacing between all elements within the 1440x1024 frame.
+

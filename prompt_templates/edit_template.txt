@@ -1,0 +1,23 @@
+Edit the moodboard image:
+
+**Edit request:** {EDIT_REQUEST}
+
+**IMPORTANT INSTRUCTIONS:** 
+- Modify the image according to the edit request.
+- Keep the overall moodboard aesthetic and style consistent.
+- Match the quality and visual style of the existing moodboard layout.
+
+**Grid Cell Location (USE THIS TO IDENTIFY THE REGION):**
+This moodboard has a 2x4 grid layout:
+- **Top Row (The Look)**: 4 vertical portrait images (Cells 1-4, left to right)
+- **Bottom Row (The Details)**: 4 square images (Cells 1-4, left to right)
+
+**Target Grid Cell:** {GRID_CELL_DESCRIPTION}
+- Grid Position: Row {GRID_ROW} ({GRID_ROW_NAME}), Column {GRID_COLUMN}
+- Overlapping Cells: {GRID_OVERLAPPING_CELLS}
+
+**Technical Reference (for precise boundaries only):**
+- Normalized coordinates: ({X_TOP_NORM}, {Y_TOP_NORM}) to ({X_BOTTOM_NORM}, {Y_BOTTOM_NORM})
+- Region size: {WIDTH_NORM} x {HEIGHT_NORM} (normalized), {WIDTH} x {HEIGHT} pixels (absolute)
+- Full image size: {IMAGE_WIDTH} x {IMAGE_HEIGHT} pixels
+
