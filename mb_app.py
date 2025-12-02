@@ -52,6 +52,94 @@ def _load_edit_template() -> str:
         return f.read()
 
 
+_REAL_TIME_DIRECT_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in (
+        r"\bcurrent weather\b",
+        r"\btoday'?s weather\b",
+        r"\btoday'?s temperature\b",
+        r"\bweather (forecast|report|update)s?\b",
+        r"\bstorm (warning|watch|tracker)\b",
+        r"\brain (radar|tracker)\b",
+        r"\buv\s+index\b",
+        r"\bair\s+quality\b",
+        r"\b(stock|stocks|market|markets)\s+(chart|charts|price|prices|update|updates|ticker|tickers|close|closing)\b",
+        r"\bstock\s+(chart|charts|price|prices|ticker|tickers)\b",
+        r"\b(nasdaq|dow jones|s&p\s*500)\b",
+        r"\bearnings (call|report|guidance)\b",
+        r"\bcrypto (price|chart|update)\b",
+        r"\bbitcoin (price|chart|update)\b",
+        r"\bfinancial (news|update|report)\b",
+        r"\bmarket (open|close)\b",
+        r"\bbreaking news\b",
+        r"\bcurrent events?\b",
+        r"\blatest news\b",
+        r"\brecent events?\b",
+        r"\blive (news|coverage|feed)\b",
+        r"\bfashion week (schedule|calendar|lineup)\b",
+        r"\bfashion show (schedule|livestream|coverage)\b",
+        r"\brunway (schedule|livestream|coverage)\b",
+        r"\bred carpet (coverage|arrivals)\b",
+        r"\baward show (lineup|coverage)\b",
+        r"\blast night'?s (runway|red carpet|show)\b",
+        r"\b(celebrity|influencer)\s+(look|outfit)\s+(today|tonight|last\s+night)\b",
+        r"\bcollection drop\b",
+        r"\b(restock|restocks|release|releases)\s+(alert|alerts|update|updates)\b",
+        r"\brelease date\b",
+    )
+]
+
+_REAL_TIME_TIME_PATTERN = (
+    r"(?:"
+    r"today(?:'s)?|tonight|tomorrow|current(?:ly)?|latest|recent|breaking|"
+    r"live|upcoming|right\s+now|real[-\s]?time|this\s+week|next\s+week|"
+    r"this\s+month|next\s+month|this\s+season|next\s+season|forecast|update|"
+    r"up[-\s]?to[-\s]?date|today\s+only"
+    r")"
+)
+
+_REAL_TIME_TOPIC_PATTERN = (
+    r"(?:"
+    r"weather|temperature|rain|storm|snow|precipitation|humidity|climate|"
+    r"uv\s+index|air\s+quality|stock|stocks|market|markets|chart|charts|"
+    r"nasdaq|dow\s+jones|s&p\s*500|earnings|crypto|bitcoin|ethereum|news|"
+    r"event|events|headline|runway|fashion\s+week|fashion\s+show|runway\s+show|"
+    r"collection\s+drop|capsule\s+drop|product\s+drop|restock|release|lineup|"
+    r"schedule|calendar|red\s+carpet|award\s+show|premiere|street\s+style|"
+    r"lookbook|front\s+row"
+    r")"
+)
+
+_REAL_TIME_PROXIMITY_PATTERNS = [
+    re.compile(
+        rf"{_REAL_TIME_TIME_PATTERN}[\s\S]{{0,80}}{_REAL_TIME_TOPIC_PATTERN}",
+        re.IGNORECASE | re.DOTALL,
+    ),
+    re.compile(
+        rf"{_REAL_TIME_TOPIC_PATTERN}[\s\S]{{0,80}}{_REAL_TIME_TIME_PATTERN}",
+        re.IGNORECASE | re.DOTALL,
+    ),
+]
+
+
+def _contains_real_time_info(prompt: str) -> bool:
+    """Return True if the prompt asks for real-time info (weather, stocks, runway coverage, etc.)."""
+    if not prompt:
+        return False
+    
+    normalized_prompt = prompt.lower()
+    
+    for pattern in _REAL_TIME_DIRECT_PATTERNS:
+        if pattern.search(normalized_prompt):
+            return True
+    
+    for pattern in _REAL_TIME_PROXIMITY_PATTERNS:
+        if pattern.search(normalized_prompt):
+            return True
+    
+    return False
+
+
 def _build_prompt(user_input: str, template: str) -> str:
     """Build the final prompt by replacing placeholder with user input"""
     return template.replace(SUBJECT_PLACEHOLDER, user_input)
@@ -288,6 +376,11 @@ def _get_client() -> genai.Client:
 
 
 def _generate_single_image(prompt: str, model_id: str):
+    tools = None
+    if _contains_real_time_info(prompt):
+        print(f"{prompt} likely contains some info that could benefit from search-grounding.")
+        tools = [{"google_search": {}}]
+    
     client = _get_client()
     image_config = {"aspect_ratio": DEFAULT_ASPECT_RATIO}
     config_kwargs = {}
@@ -302,6 +395,7 @@ def _generate_single_image(prompt: str, model_id: str):
         model=model_id,
         contents=prompt,
         config=types.GenerateContentConfig(**config_kwargs),
+        tools=tools,
     )
     for part in response.parts:
         if part.inline_data:
@@ -739,4 +833,3 @@ with gr.Blocks(title="Fashion Moodboard", css="""
 
 if __name__ == "__main__":
     demo.launch(show_error=True, server_name="0.0.0.0", server_port=7860, share=False)
-
