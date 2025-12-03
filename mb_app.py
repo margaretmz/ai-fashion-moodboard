@@ -55,24 +55,15 @@ def _load_edit_template() -> str:
 _REAL_TIME_DIRECT_PATTERNS = [
     re.compile(pattern, re.IGNORECASE)
     for pattern in (
-        r"\bcurrent weather\b",
+        r"\b(2025|2026|latest|trend\w*|fashion week|met gala)\b",
         r"\btoday'?s weather\b",
         r"\btoday'?s temperature\b",
         r"\bweather (forecast|report|update)s?\b",
-        r"\bstorm (warning|watch|tracker)\b",
         r"\brain (radar|tracker)\b",
-        r"\buv\s+index\b",
         r"\bair\s+quality\b",
-        r"\b(stock|stocks|market|markets)\s+(chart|charts|price|prices|update|updates|ticker|tickers|close|closing)\b",
-        r"\bstock\s+(chart|charts|price|prices|ticker|tickers)\b",
-        r"\b(nasdaq|dow jones|s&p\s*500)\b",
-        r"\bearnings (call|report|guidance)\b",
         r"\bcrypto (price|chart|update)\b",
         r"\bbitcoin (price|chart|update)\b",
-        r"\bfinancial (news|update|report)\b",
         r"\bmarket (open|close)\b",
-        r"\bbreaking news\b",
-        r"\bcurrent events?\b",
         r"\blatest news\b",
         r"\brecent events?\b",
         r"\blive (news|coverage|feed)\b",
@@ -84,7 +75,6 @@ _REAL_TIME_DIRECT_PATTERNS = [
         r"\blast night'?s (runway|red carpet|show)\b",
         r"\b(celebrity|influencer)\s+(look|outfit)\s+(today|tonight|last\s+night)\b",
         r"\bcollection drop\b",
-        r"\b(restock|restocks|release|releases)\s+(alert|alerts|update|updates)\b",
         r"\brelease date\b",
     )
 ]
@@ -100,9 +90,6 @@ _REAL_TIME_TIME_PATTERN = (
 
 _REAL_TIME_TOPIC_PATTERN = (
     r"(?:"
-    r"weather|temperature|rain|storm|snow|precipitation|humidity|climate|"
-    r"uv\s+index|air\s+quality|stock|stocks|market|markets|chart|charts|"
-    r"nasdaq|dow\s+jones|s&p\s*500|earnings|crypto|bitcoin|ethereum|news|"
     r"event|events|headline|runway|fashion\s+week|fashion\s+show|runway\s+show|"
     r"collection\s+drop|capsule\s+drop|product\s+drop|restock|release|lineup|"
     r"schedule|calendar|red\s+carpet|award\s+show|premiere|street\s+style|"
