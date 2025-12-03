@@ -292,12 +292,15 @@ def _collect_reasoning_text(parts):
     reasoning_segments = []
     
     for part in parts:
-        if getattr(part, "thought", False):
+        if part.thought:
             text_content = getattr(part, "text", None)
             if text_content:
                 reasoning_segments.append(text_content.strip())
     
-    return "\n\n".join(segment for segment in reasoning_segments if segment).strip()
+    if reasoning_segments:
+        return "\n\n".join(segment for segment in reasoning_segments if segment).strip()
+    else:
+        return "No reasoning traces recovered."
 
 
 @lru_cache(maxsize=1)
