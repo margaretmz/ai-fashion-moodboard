@@ -390,12 +390,13 @@ def _generate_single_image(prompt: str, model_id: str):
 
     image_config = types.ImageConfig(**image_config)
     config_kwargs["image_config"] = image_config
+    if tools:
+        config_kwargs["tools"] = tools
 
     response = client.models.generate_content(
         model=model_id,
         contents=prompt,
         config=types.GenerateContentConfig(**config_kwargs),
-        tools=tools,
     )
     for part in response.parts:
         if part.inline_data:
