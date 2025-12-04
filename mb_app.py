@@ -8,7 +8,7 @@ from pathlib import Path
 import gradio as gr
 from google import genai
 from google.genai import types
-from google.generativeai.types import ThinkingConfig
+from google.genai.types import ThinkingConfig
 
 from real_time_patterns import (
     _REAL_TIME_DIRECT_PATTERNS,
