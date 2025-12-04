@@ -46,21 +46,19 @@ export async function generateImage(subject, modelId, includeReasoning) {
       }
     )
 
-    if (response.data && response.data.data && response.data.data[0]) {
-      const result = response.data.data[0]
-      // Gradio returns image data as an object with 'url' and 'path' properties
-      // Return the full result object so we can access both url (for display) and path (for API calls)
-      if (typeof result === 'object') {
-        return result
-      } else if (typeof result === 'string') {
-        // Direct path string - wrap it in an object for consistency
-        return { path: result, url: result }
+    if (response.data && response.data.data) {
+      if (response.data.data.length > 1) {
+        // Handle multiple outputs (image and reasoning)
+        return {
+          image: response.data.data[0],
+          reasoning: response.data.data[1]
+        }
+      } else if (response.data.data.length === 1) {
+        // Handle single output (image only)
+        return { image: response.data.data[0], reasoning: '' }
       }
-      
-      // Fallback: return the result as-is
-      return result
     }
-    throw new Error('No image path returned from API')
+    throw new Error('No data returned from API')
   } catch (error) {
     if (error.response) {
       const errorMsg = error.response.data?.error || error.response.data?.detail || error.response.statusText
@@ -110,19 +108,19 @@ export async function editImageRegion(imagePath, bboxCoords, editRequest, modelI
       }
     )
 
-    if (response.data && response.data.data && response.data.data[0]) {
-      const result = response.data.data[0]
-      // Gradio returns image data as an object with 'url' and 'path' properties
-      // Return the full object so we can access both url (for display) and path (for API calls)
-      if (typeof result === 'object') {
-        return result
-      } else if (typeof result === 'string') {
-        // Direct path string - wrap it in an object for consistency
-        return { path: result, url: result }
+    if (response.data && response.data.data) {
+      if (response.data.data.length > 1) {
+        // Handle multiple outputs (image and reasoning)
+        return {
+          image: response.data.data[0],
+          reasoning: response.data.data[1]
+        }
+      } else if (response.data.data.length === 1) {
+        // Handle single output (image only)
+        return { image: response.data.data[0], reasoning: '' }
       }
-      return result
     }
-    throw new Error('No edited image path returned from API')
+    throw new Error('No data returned from API')
   } catch (error) {
     if (error.response) {
       const errorMsg = error.response.data?.error || error.response.data?.detail || error.response.statusText

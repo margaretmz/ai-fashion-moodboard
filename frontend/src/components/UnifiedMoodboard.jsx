@@ -10,6 +10,7 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning }) {
   const [bbox, setBbox] = useState(null) // No default bbox - only set when user drags
   const [imageUrl, setImageUrl] = useState(null)
   const [isEditMode, setIsEditMode] = useState(false)
+  const [reasoningTrace, setReasoningTrace] = useState('') // New state for reasoning trace
   const inputRef = useRef(null)
   
   // Detect if running on Mac
@@ -24,6 +25,7 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning }) {
     } else {
       setImageUrl(null)
       setIsEditMode(false)
+      setReasoningTrace('') // Clear reasoning when image is cleared
     }
   }, [currentImage])
 
@@ -47,6 +49,7 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning }) {
 
     setLoading(true)
     setError(null)
+    setReasoningTrace('') // Clear previous reasoning on new submission
 
     try {
       if (isEditMode && currentImage) {
@@ -61,21 +64,23 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning }) {
           y2: bbox.y2
         } : null
         
-        const editedImageData = await editImageRegion(
+        const response = await editImageRegion(
           imagePath,
           bboxCoords,
           inputText,
           selectedModel,
           includeReasoning
         )
-        setCurrentImage(editedImageData)
+        setCurrentImage(response.image)
+        setReasoningTrace(response.reasoning)
         setInputText('') // Clear input after edit
         // Optionally clear bbox after edit
         // setBbox(null)
       } else {
         // Generate mode: create new image
-        const imageData = await generateImage(inputText, selectedModel, includeReasoning)
-        setCurrentImage(imageData)
+        const response = await generateImage(inputText, selectedModel, includeReasoning)
+        setCurrentImage(response.image)
+        setReasoningTrace(response.reasoning)
         setInputText('') // Clear input after generation
       }
     } catch (err) {
@@ -242,6 +247,17 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning }) {
           </p>
         </div>
       </div>
+
+      {includeReasoning && reasoningTrace && (
+        <div className="bg-white border-t border-gray-200 shadow-lg p-4 mt-4">
+          <div className="max-w-4xl mx-auto">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">Reasoning Trace:</h3>
+            <div className="bg-gray-100 p-3 rounded-lg overflow-x-auto text-sm text-gray-700 whitespace-pre-wrap">
+              {reasoningTrace}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -97,7 +97,7 @@ def _calculate_grid_cell(
     x_top: int,
     y_top: int,
     x_bottom: int,
-    y_bottom: çint,
+    y_bottom: int,
     img_width: int,
     img_height: int,
 ) -> dict:
@@ -412,6 +412,7 @@ def generate_image(user_input: str, model_id: str, template: str, include_reason
     # Return the PIL Image object directly - Gradio can display it and serve it via /file= endpoint
     # The image is also saved to outputs/ for persistence
     reasoning_output = reasoning_text if include_reasoning else ""
+    print("Reasoning output (generate):", reasoning_output)
     return pil_image, reasoning_output
 
 
@@ -643,6 +644,7 @@ def edit_image_region(
     
     # Return the PIL Image object directly - Gradio can display it and serve it via /file= endpoint
     # The image is also saved to outputs/ for persistence (replacing original if applicable)
+    print("Reasoning output (edit):", reasoning_output)
     return pil_image, reasoning_output
 
 
