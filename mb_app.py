@@ -8,6 +8,7 @@ from pathlib import Path
 import gradio as gr
 from google import genai
 from google.genai import types
+from google.generativeai.types import ThinkingConfig
 
 from real_time_patterns import (
     _REAL_TIME_DIRECT_PATTERNS,
@@ -363,7 +364,7 @@ def _generate_single_image(prompt: str, model_id: str, include_reasoning: bool =
     config_kwargs["image_config"] = image_config
     
     if include_reasoning:
-        config_kwargs["response_modalities"] = ['IMAGE', 'TEXT']
+        config_kwargs["thinking_config"] = ThinkingConfig(include_thoughts=True)
     if tools:
         config_kwargs["tools"] = tools
 
@@ -614,7 +615,7 @@ def edit_image_region(
     config_kwargs["image_config"] = image_config
     
     if include_reasoning:
-        config_kwargs["response_modalities"] = ['IMAGE', 'TEXT']
+        config_kwargs["thinking_config"] = ThinkingConfig(include_thoughts=True)
     
     # Generate edited image
     response = client.models.generate_content(
