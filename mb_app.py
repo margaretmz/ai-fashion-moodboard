@@ -9,6 +9,12 @@ import gradio as gr
 from google import genai
 from google.genai import types
 
+from real_time_patterns import (
+    _REAL_TIME_DIRECT_PATTERNS,
+    _REAL_TIME_TIME_PATTERN,
+    _REAL_TIME_TOPIC_PATTERN,
+)
+
 
 GEMINI_3_MODEL_ID = "gemini-3-pro-image-preview"
 GEMINI_25_MODEL_ID = "gemini-2.5-flash-image"
@@ -50,6 +56,36 @@ def _load_edit_template() -> str:
     
     with open(EDIT_TEMPLATE_FILE, "r", encoding="utf-8") as f:
         return f.read()
+
+
+_REAL_TIME_PROXIMITY_PATTERNS = [
+    re.compile(
+        rf"{_REAL_TIME_TIME_PATTERN}[\s\S]{{0,80}}{_REAL_TIME_TOPIC_PATTERN}",
+        re.IGNORECASE | re.DOTALL,
+    ),
+    re.compile(
+        rf"{_REAL_TIME_TOPIC_PATTERN}[\s\S]{{0,80}}{_REAL_TIME_TIME_PATTERN}",
+        re.IGNORECASE | re.DOTALL,
+    ),
+]
+
+
+def _contains_real_time_info(prompt: str) -> bool:
+    """Return True if the prompt asks for real-time info (weather, stocks, runway coverage, etc.)."""
+    if not prompt:
+        return False
+    
+    normalized_prompt = prompt.lower()
+    
+    for pattern in _REAL_TIME_DIRECT_PATTERNS:
+        if pattern.search(normalized_prompt):
+            return True
+    
+    for pattern in _REAL_TIME_PROXIMITY_PATTERNS:
+        if pattern.search(normalized_prompt):
+            return True
+    
+    return False
 
 
 def _build_prompt(user_input: str, template: str) -> str:
@@ -312,6 +348,11 @@ def _get_client() -> genai.Client:
 
 
 def _generate_single_image(prompt: str, model_id: str, include_reasoning: bool = False):
+    tools = None
+    if _contains_real_time_info(prompt):
+        print(f"{prompt} likely contains some info that could benefit from search-grounding.")
+        tools = [{"google_search": {}}]
+    
     client = _get_client()
     image_config = {"aspect_ratio": DEFAULT_ASPECT_RATIO}
     config_kwargs = {}
@@ -324,6 +365,8 @@ def _generate_single_image(prompt: str, model_id: str, include_reasoning: bool =
     
     if include_reasoning:
         config_kwargs["response_modalities"] = ["TEXT", "IMAGE"]
+    if tools:
+        config_kwargs["tools"] = tools
 
     response = client.models.generate_content(
         model=model_id,
