@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { generateImage, editImageRegion, getImageUrl } from '../services/api'
 import BoundingBoxSelector from './BoundingBoxSelector'
 
-function UnifiedMoodboard({ selectedModel, onImageChange }) {
+function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning }) {
   const [currentImage, setCurrentImage] = useState(null)
   const [inputText, setInputText] = useState('')
   const [loading, setLoading] = useState(false)
@@ -65,7 +65,8 @@ function UnifiedMoodboard({ selectedModel, onImageChange }) {
           imagePath,
           bboxCoords,
           inputText,
-          selectedModel
+          selectedModel,
+          includeReasoning
         )
         setCurrentImage(editedImageData)
         setInputText('') // Clear input after edit
@@ -73,7 +74,7 @@ function UnifiedMoodboard({ selectedModel, onImageChange }) {
         // setBbox(null)
       } else {
         // Generate mode: create new image
-        const imageData = await generateImage(inputText, selectedModel)
+        const imageData = await generateImage(inputText, selectedModel, includeReasoning)
         setCurrentImage(imageData)
         setInputText('') // Clear input after generation
       }

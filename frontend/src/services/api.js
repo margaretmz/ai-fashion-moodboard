@@ -22,7 +22,7 @@ async function getAPIInfo() {
 }
 
 // Generate image
-export async function generateImage(subject, modelId) {
+export async function generateImage(subject, modelId, includeReasoning) {
   await waitForAPI()
   
   try {
@@ -35,7 +35,7 @@ export async function generateImage(subject, modelId) {
     const response = await axios.post(
       apiUrl,
       {
-        data: [subject, modelId, ""], // user_input, model_id, template (empty string = use default)
+        data: [subject, modelId, "", includeReasoning], // user_input, model_id, template (empty string = use default)
       },
       {
         headers: {
@@ -72,7 +72,7 @@ export async function generateImage(subject, modelId) {
 
 // Edit image region
 // bboxCoords can be null/undefined if no region is selected (edit entire image)
-export async function editImageRegion(imagePath, bboxCoords, editRequest, modelId) {
+export async function editImageRegion(imagePath, bboxCoords, editRequest, modelId, includeReasoning) {
   await waitForAPI()
   
   try {
@@ -98,7 +98,8 @@ export async function editImageRegion(imagePath, bboxCoords, editRequest, modelI
           yBottom,
           editRequest,
           modelId,
-          "" // edit_template (empty string = use default)
+          "", // edit_template (empty string = use default)
+          includeReasoning
         ],
       },
       {

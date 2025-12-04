@@ -61,7 +61,7 @@ def _calculate_grid_cell(
     x_top: int,
     y_top: int,
     x_bottom: int,
-    y_bottom: int,
+    y_bottom: çint,
     img_width: int,
     img_height: int,
 ) -> dict:
