@@ -323,15 +323,14 @@ def _extract_image_from_parts(parts):
     return None
 
 
-def _collect_reasoning_text(parts):
+def _collect_reasoning_text(response):
     """Collect intermediate thoughts emitted by the model."""
     reasoning_segments = []
     
-    for part in parts:
+    for part in response.candidates[0].content.parts:
         if part.thought:
-            text_content = getattr(part, "text", None)
-            if text_content:
-                reasoning_segments.append(text_content.strip())
+            if part.text:
+                reasoning_segments.append(part.text.strip())
     
     if reasoning_segments:
         return "\n\n".join(segment for segment in reasoning_segments if segment).strip()
@@ -364,7 +363,7 @@ def _generate_single_image(prompt: str, model_id: str, include_reasoning: bool =
     config_kwargs["image_config"] = image_config
     
     if include_reasoning:
-        config_kwargs["response_modalities"] = ["TEXT", "IMAGE"]
+        config_kwargs["response_modalities"] = ['IMAGE', 'TEXT']
     if tools:
         config_kwargs["tools"] = tools
 
@@ -375,7 +374,7 @@ def _generate_single_image(prompt: str, model_id: str, include_reasoning: bool =
     )
     
     image = _extract_image_from_parts(response.parts)
-    reasoning_text = _collect_reasoning_text(response.parts) if include_reasoning else ""
+    reasoning_text = _collect_reasoning_text(response) if include_reasoning else ""
     return image, reasoning_text
 
 
@@ -614,7 +613,7 @@ def edit_image_region(
     config_kwargs["image_config"] = image_config
     
     if include_reasoning:
-        config_kwargs["response_modalities"] = ["TEXT", "IMAGE"]
+        config_kwargs["response_modalities"] = ['IMAGE', 'TEXT']
     
     # Generate edited image
     response = client.models.generate_content(
@@ -640,7 +639,7 @@ def edit_image_region(
         output_path = OUTPUT_DIR / filename
         pil_image.save(output_path)
     
-    reasoning_output = _collect_reasoning_text(response.parts) if include_reasoning else ""
+    reasoning_output = _collect_reasoning_text(response) if include_reasoning else ""
     
     # Return the PIL Image object directly - Gradio can display it and serve it via /file= endpoint
     # The image is also saved to outputs/ for persistence (replacing original if applicable)
