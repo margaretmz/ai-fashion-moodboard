@@ -9,6 +9,12 @@ import gradio as gr
 from google import genai
 from google.genai import types
 
+from real_time_patterns import (
+    _REAL_TIME_DIRECT_PATTERNS,
+    _REAL_TIME_TIME_PATTERN,
+    _REAL_TIME_TOPIC_PATTERN,
+)
+
 
 GEMINI_3_MODEL_ID = "gemini-3-pro-image-preview"
 GEMINI_25_MODEL_ID = "gemini-2.5-flash-image"
@@ -50,6 +56,36 @@ def _load_edit_template() -> str:
     
     with open(EDIT_TEMPLATE_FILE, "r", encoding="utf-8") as f:
         return f.read()
+
+
+_REAL_TIME_PROXIMITY_PATTERNS = [
+    re.compile(
+        rf"{_REAL_TIME_TIME_PATTERN}[\s\S]{{0,80}}{_REAL_TIME_TOPIC_PATTERN}",
+        re.IGNORECASE | re.DOTALL,
+    ),
+    re.compile(
+        rf"{_REAL_TIME_TOPIC_PATTERN}[\s\S]{{0,80}}{_REAL_TIME_TIME_PATTERN}",
+        re.IGNORECASE | re.DOTALL,
+    ),
+]
+
+
+def _contains_real_time_info(prompt: str) -> bool:
+    """Return True if the prompt asks for real-time info (weather, stocks, runway coverage, etc.)."""
+    if not prompt:
+        return False
+    
+    normalized_prompt = prompt.lower()
+    
+    for pattern in _REAL_TIME_DIRECT_PATTERNS:
+        if pattern.search(normalized_prompt):
+            return True
+    
+    for pattern in _REAL_TIME_PROXIMITY_PATTERNS:
+        if pattern.search(normalized_prompt):
+            return True
+    
+    return False
 
 
 def _build_prompt(user_input: str, template: str) -> str:
@@ -287,17 +323,19 @@ def _extract_image_from_parts(parts):
     return None
 
 
-def _collect_reasoning_text(parts):
+def _collect_reasoning_text(response):
     """Collect intermediate thoughts emitted by the model."""
     reasoning_segments = []
     
-    for part in parts:
-        if getattr(part, "thought", False):
-            text_content = getattr(part, "text", None)
-            if text_content:
-                reasoning_segments.append(text_content.strip())
+    for part in response.candidates[0].content.parts:
+        if part.thought:
+            if part.text:
+                reasoning_segments.append(part.text.strip())
     
-    return "\n\n".join(segment for segment in reasoning_segments if segment).strip()
+    if reasoning_segments:
+        return "\n\n".join(segment for segment in reasoning_segments if segment).strip()
+    else:
+        return "No reasoning traces recovered."
 
 
 @lru_cache(maxsize=1)
@@ -309,6 +347,11 @@ def _get_client() -> genai.Client:
 
 
 def _generate_single_image(prompt: str, model_id: str, include_reasoning: bool = False):
+    tools = None
+    if _contains_real_time_info(prompt):
+        print(f"{prompt} likely contains some info that could benefit from search-grounding.")
+        tools = [{"google_search": {}}]
+    
     client = _get_client()
     image_config = {"aspect_ratio": DEFAULT_ASPECT_RATIO}
     config_kwargs = {}
@@ -320,7 +363,9 @@ def _generate_single_image(prompt: str, model_id: str, include_reasoning: bool =
     config_kwargs["image_config"] = image_config
     
     if include_reasoning:
-        config_kwargs["response_modalities"] = ["TEXT", "IMAGE"]
+        config_kwargs["response_modalities"] = ['IMAGE', 'TEXT']
+    if tools:
+        config_kwargs["tools"] = tools
 
     response = client.models.generate_content(
         model=model_id,
@@ -329,7 +374,7 @@ def _generate_single_image(prompt: str, model_id: str, include_reasoning: bool =
     )
     
     image = _extract_image_from_parts(response.parts)
-    reasoning_text = _collect_reasoning_text(response.parts) if include_reasoning else ""
+    reasoning_text = _collect_reasoning_text(response) if include_reasoning else ""
     return image, reasoning_text
 
 
@@ -568,7 +613,7 @@ def edit_image_region(
     config_kwargs["image_config"] = image_config
     
     if include_reasoning:
-        config_kwargs["response_modalities"] = ["TEXT", "IMAGE"]
+        config_kwargs["response_modalities"] = ['IMAGE', 'TEXT']
     
     # Generate edited image
     response = client.models.generate_content(
@@ -594,7 +639,7 @@ def edit_image_region(
         output_path = OUTPUT_DIR / filename
         pil_image.save(output_path)
     
-    reasoning_output = _collect_reasoning_text(response.parts) if include_reasoning else ""
+    reasoning_output = _collect_reasoning_text(response) if include_reasoning else ""
     
     # Return the PIL Image object directly - Gradio can display it and serve it via /file= endpoint
     # The image is also saved to outputs/ for persistence (replacing original if applicable)
