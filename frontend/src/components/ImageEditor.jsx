@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { editImageRegion, getImageUrl } from '../services/api'
 import BoundingBoxSelector from './BoundingBoxSelector'
 
-function ImageEditor({ image, selectedModel, onImageEdited }) {
+function ImageEditor({ image, selectedModel, onImageEdited, includeReasoning }) {
   const [editRequest, setEditRequest] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -38,14 +38,14 @@ function ImageEditor({ image, selectedModel, onImageEdited }) {
       // If image is an object with 'path', use that; otherwise use the image directly
       const imagePath = typeof image === 'object' && image.path ? image.path : image
       
+      const { x1, y1, x2, y2 } = bbox
+      const bboxCoords = { x1, y1, x2, y2 }
       const editedImageData = await editImageRegion(
         imagePath,
-        bbox.x1,
-        bbox.y1,
-        bbox.x2,
-        bbox.y2,
+        bboxCoords,
         editRequest,
-        selectedModel
+        selectedModel,
+        includeReasoning
       )
       // Update the parent component with the edited image
       onImageEdited(editedImageData)

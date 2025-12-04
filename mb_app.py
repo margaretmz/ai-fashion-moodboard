@@ -8,6 +8,7 @@ from pathlib import Path
 import gradio as gr
 from google import genai
 from google.genai import types
+from google.genai.types import ThinkingConfig
 
 from real_time_patterns import (
     _REAL_TIME_DIRECT_PATTERNS,
@@ -315,6 +316,29 @@ def _build_edit_prompt(
     return prompt
 
 
+def _extract_image_from_parts(parts):
+    """Replicate the original logic: return the first inline image part, else None."""
+    for part in parts:
+        if getattr(part, "inline_data", None):
+            return part.as_image()
+    return None
+
+
+def _collect_reasoning_text(response):
+    """Collect intermediate thoughts emitted by the model."""
+    reasoning_segments = []
+    
+    for part in response.candidates[0].content.parts:
+        if part.thought:
+            if part.text:
+                reasoning_segments.append(part.text.strip())
+    
+    if reasoning_segments:
+        return "\n\n".join(segment for segment in reasoning_segments if segment).strip()
+    else:
+        return "No reasoning traces recovered."
+
+
 @lru_cache(maxsize=1)
 def _get_client() -> genai.Client:
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
@@ -323,7 +347,7 @@ def _get_client() -> genai.Client:
     return genai.Client(api_key=api_key)
 
 
-def _generate_single_image(prompt: str, model_id: str):
+def _generate_single_image(prompt: str, model_id: str, include_reasoning: bool = False):
     tools = None
     if _contains_real_time_info(prompt):
         print(f"{prompt} likely contains some info that could benefit from search-grounding.")
@@ -338,6 +362,9 @@ def _generate_single_image(prompt: str, model_id: str):
 
     image_config = types.ImageConfig(**image_config)
     config_kwargs["image_config"] = image_config
+    
+    if include_reasoning:
+        config_kwargs["thinking_config"] = ThinkingConfig(include_thoughts=True)
     if tools:
         config_kwargs["tools"] = tools
 
@@ -346,13 +373,13 @@ def _generate_single_image(prompt: str, model_id: str):
         contents=prompt,
         config=types.GenerateContentConfig(**config_kwargs),
     )
-    for part in response.parts:
-        if part.inline_data:
-            return part.as_image()
-    return None
+    
+    image = _extract_image_from_parts(response.parts)
+    reasoning_text = _collect_reasoning_text(response) if include_reasoning else ""
+    return image, reasoning_text
 
 
-def generate_image(user_input: str, model_id: str, template: str):
+def generate_image(user_input: str, model_id: str, template: str, include_reasoning: bool):
     """Generate image using the prompt template with user input"""
     user_input = user_input.strip()
     if not user_input:
@@ -365,7 +392,11 @@ def generate_image(user_input: str, model_id: str, template: str):
     # Build the full prompt from template
     full_prompt = _build_prompt(user_input, template)
     
-    image = _generate_single_image(full_prompt, model_id=model_id)
+    image, reasoning_text = _generate_single_image(
+        full_prompt,
+        model_id=model_id,
+        include_reasoning=include_reasoning,
+    )
     
     if not image:
         raise gr.Error("The model did not return any image data. Please try again.")
@@ -381,7 +412,9 @@ def generate_image(user_input: str, model_id: str, template: str):
     
     # Return the PIL Image object directly - Gradio can display it and serve it via /file= endpoint
     # The image is also saved to outputs/ for persistence
-    return pil_image
+    reasoning_output = reasoning_text if include_reasoning else ""
+    print("Reasoning output (generate):", reasoning_output)
+    return pil_image, reasoning_output
 
 
 def edit_image_region(
@@ -394,6 +427,7 @@ def edit_image_region(
     edit_request: str,
     model_id: str,
     edit_template: str,
+    include_reasoning: bool,
 ):
     """Edit a specific region of the image defined by bounding box, or entire image if bbox is None"""
     from PIL import Image
@@ -580,6 +614,9 @@ def edit_image_region(
     image_config = types.ImageConfig(**image_config)
     config_kwargs["image_config"] = image_config
     
+    if include_reasoning:
+        config_kwargs["thinking_config"] = ThinkingConfig(include_thoughts=True)
+    
     # Generate edited image
     response = client.models.generate_content(
         model=model_id,
@@ -587,31 +624,29 @@ def edit_image_region(
         config=types.GenerateContentConfig(**config_kwargs),
     )
     
-    # Extract the edited image
-    for part in response.parts:
-        if part.inline_data:
-            edited_image = part.as_image()
-            if edited_image:
-                pil_image = edited_image._pil_image
-                
-                # Save edited image - replace original if we have the original path, otherwise create new file
-                if original_file_path and os.path.exists(original_file_path):
-                    # Replace the original file with the edited version
-                    output_path = Path(original_file_path)
-                    pil_image.save(output_path)
-                else:
-                    # Create a new file with unique filename
-                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    unique_id = str(uuid.uuid4())[:8]
-                    filename = f"edited_{timestamp}_{unique_id}.png"
-                    output_path = OUTPUT_DIR / filename
-                    pil_image.save(output_path)
-                
-                # Return the PIL Image object directly - Gradio can display it and serve it via /file= endpoint
-                # The image is also saved to outputs/ for persistence (replacing original if applicable)
-                return pil_image
+    edited_image = _extract_image_from_parts(response.parts)
+    if not edited_image:
+        raise gr.Error("The model did not return any image data. Please try again.")
     
-    raise gr.Error("The model did not return any image data. Please try again.")
+    pil_image = edited_image._pil_image
+    
+    # Save edited image - replace original if we have the original path, otherwise create new file
+    if original_file_path and os.path.exists(original_file_path):
+        output_path = Path(original_file_path)
+        pil_image.save(output_path)
+    else:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        unique_id = str(uuid.uuid4())[:8]
+        filename = f"edited_{timestamp}_{unique_id}.png"
+        output_path = OUTPUT_DIR / filename
+        pil_image.save(output_path)
+    
+    reasoning_output = _collect_reasoning_text(response) if include_reasoning else ""
+    
+    # Return the PIL Image object directly - Gradio can display it and serve it via /file= endpoint
+    # The image is also saved to outputs/ for persistence (replacing original if applicable)
+    print("Reasoning output (edit):", reasoning_output)
+    return pil_image, reasoning_output
 
 
 with gr.Blocks(title="Fashion Moodboard", css="""
@@ -654,12 +689,16 @@ with gr.Blocks(title="Fashion Moodboard", css="""
     
     # Model selector and prompt templates at the top
     with gr.Row():
-        model_selector = gr.Radio(
-            choices=MODEL_CHOICES,
-            value=DEFAULT_MODEL_ID,
-            label="Model",
-            scale=0,
-        )
+        with gr.Column(scale=0):
+            model_selector = gr.Radio(
+                choices=MODEL_CHOICES,
+                value=DEFAULT_MODEL_ID,
+                label="Model",
+            )
+            reasoning_checkbox = gr.Checkbox(
+                label="Show reasoning trace",
+                value=False,
+            )
         with gr.Tabs():
             with gr.Tab("Generation Template"):
                 prompt_template_component = gr.Textbox(
@@ -721,12 +760,19 @@ with gr.Blocks(title="Fashion Moodboard", css="""
     
     # Image display area (5 parts of height ratio)
     with gr.Row(elem_classes=["image-section"]):
-        image_display = gr.Image(
-            label="",
-            type="filepath",  # Changed to filepath to work with saved file paths
-            show_label=False,
-            container=True,
-        )
+        with gr.Column():
+            image_display = gr.Image(
+                label="",
+                type="filepath",  # Changed to filepath to work with saved file paths
+                show_label=False,
+                container=True,
+            )
+            reasoning_display = gr.Textbox(
+                label="Reasoning Trace",
+                value="",
+                lines=6,
+                interactive=False,
+            )
     
     # Input area at bottom center (1 part of height ratio)
     with gr.Row(elem_classes=["input-section"]):
@@ -748,16 +794,16 @@ with gr.Blocks(title="Fashion Moodboard", css="""
     # Set up the click handler
     send_button.click(
         fn=generate_image,
-        inputs=[prompt_input, model_selector, prompt_template_component],
-        outputs=image_display,
+        inputs=[prompt_input, model_selector, prompt_template_component, reasoning_checkbox],
+        outputs=[image_display, reasoning_display],
         api_name="generate_image",
     )
     
     # Also allow Enter key to submit
     prompt_input.submit(
         fn=generate_image,
-        inputs=[prompt_input, model_selector, prompt_template_component],
-        outputs=image_display,
+        inputs=[prompt_input, model_selector, prompt_template_component, reasoning_checkbox],
+        outputs=[image_display, reasoning_display],
         api_name="generate_image_1",
     )
     
@@ -774,8 +820,9 @@ with gr.Blocks(title="Fashion Moodboard", css="""
             edit_request_input,
             model_selector,
             edit_template_component,
+            reasoning_checkbox,
         ],
-        outputs=image_display,
+        outputs=[image_display, reasoning_display],
         api_name="edit_image_region",
     )
 
