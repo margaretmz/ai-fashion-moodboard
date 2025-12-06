@@ -48,13 +48,15 @@ export async function generateImage(subject, modelId, includeReasoning) {
 
     if (response.data && response.data.data) {
       if (response.data.data.length > 1) {
-        // Handle multiple outputs (image and reasoning)
+        // Handle multiple outputs (image path and reasoning)
+        // Backend now returns file path as string
+        const imagePath = response.data.data[0]
         return {
-          image: response.data.data[0],
+          image: imagePath, // File path string
           reasoning: response.data.data[1]
         }
       } else if (response.data.data.length === 1) {
-        // Handle single output (image only)
+        // Handle single output (image path only)
         return { image: response.data.data[0], reasoning: '' }
       }
     }
@@ -110,13 +112,15 @@ export async function editImageRegion(imagePath, bboxCoords, editRequest, modelI
 
     if (response.data && response.data.data) {
       if (response.data.data.length > 1) {
-        // Handle multiple outputs (image and reasoning)
+        // Handle multiple outputs (image path and reasoning)
+        // Backend now returns file path as string
+        const imagePath = response.data.data[0]
         return {
-          image: response.data.data[0],
+          image: imagePath, // File path string
           reasoning: response.data.data[1]
         }
       } else if (response.data.data.length === 1) {
-        // Handle single output (image only)
+        // Handle single output (image path only)
         return { image: response.data.data[0], reasoning: '' }
       }
     }
@@ -140,29 +144,25 @@ export function getImageUrl(filePathOrUrlOrObject) {
     if (filePathOrUrlOrObject.url) {
       return filePathOrUrlOrObject.url
     } else if (filePathOrUrlOrObject.path) {
-      // Construct URL from path
+      // Construct URL from path (filename)
       const baseUrl = API_BASE_URL || 'http://127.0.0.1:7860'
-      return `${baseUrl}/gradio_api/file=${filePathOrUrlOrObject.path}`
+      const filename = filePathOrUrlOrObject.path.split('/').pop().split('\\').pop()
+      return `${baseUrl}/gradio_api/file=${filename}`
     }
     return null
   }
   
   // If it's already a full URL, return it directly
-  if (filePathOrUrlOrObject.startsWith('http')) {
+  if (typeof filePathOrUrlOrObject === 'string' && filePathOrUrlOrObject.startsWith('http')) {
     return filePathOrUrlOrObject
   }
   
-  // If it's a file path, construct the Gradio file URL
-  // Gradio serves files via /gradio_api/file= endpoint
+  // If it's a file path (string), extract filename and construct Gradio file URL
+  // Backend now returns full file paths, but we only need the filename for Gradio
   const baseUrl = API_BASE_URL || 'http://127.0.0.1:7860'
   
-  // If it's an absolute path, use it directly with /gradio_api/file=
-  if (filePathOrUrlOrObject.startsWith('/')) {
-    return `${baseUrl}/gradio_api/file=${filePathOrUrlOrObject}`
-  }
-  
-  // Otherwise, extract filename and use it
-  const filename = filePathOrUrlOrObject.split('/').pop()
+  // Extract just the filename from the path (handles both absolute and relative paths)
+  const filename = filePathOrUrlOrObject.split('/').pop().split('\\').pop()
   return `${baseUrl}/gradio_api/file=${filename}`
 }
 
