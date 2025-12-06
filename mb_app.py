@@ -362,9 +362,8 @@ def _generate_single_image(prompt: str, model_id: str, include_reasoning: bool =
 
     image_config = types.ImageConfig(**image_config)
     config_kwargs["image_config"] = image_config
+    config_kwargs["thinking_config"] = ThinkingConfig(include_thoughts=True)
     
-    if include_reasoning:
-        config_kwargs["thinking_config"] = ThinkingConfig(include_thoughts=True)
     if tools:
         config_kwargs["tools"] = tools
 
@@ -375,7 +374,7 @@ def _generate_single_image(prompt: str, model_id: str, include_reasoning: bool =
     )
     
     image = _extract_image_from_parts(response.parts)
-    reasoning_text = _collect_reasoning_text(response) if include_reasoning else ""
+    reasoning_text = _collect_reasoning_text(response)
     return image, reasoning_text
 
 
@@ -410,11 +409,13 @@ def generate_image(user_input: str, model_id: str, template: str, include_reason
     output_path = OUTPUT_DIR / filename
     pil_image.save(output_path)
     
-    # Return the PIL Image object directly - Gradio can display it and serve it via /file= endpoint
-    # The image is also saved to outputs/ for persistence
-    reasoning_output = reasoning_text if include_reasoning else ""
+    # Return the file path string - Gradio can display it and serve it via /file= endpoint
+    # Using the saved file path ensures each version has its own unique, immutable file
+    reasoning_output = reasoning_text
     print("Reasoning output (generate):", reasoning_output)
-    return pil_image, reasoning_output
+    print(f"Saved generated image to: {output_path}")
+    # Return the absolute path as a string - Gradio will handle serving it
+    return str(output_path), reasoning_output
 
 
 def edit_image_region(
@@ -613,9 +614,7 @@ def edit_image_region(
     
     image_config = types.ImageConfig(**image_config)
     config_kwargs["image_config"] = image_config
-    
-    if include_reasoning:
-        config_kwargs["thinking_config"] = ThinkingConfig(include_thoughts=True)
+    config_kwargs["thinking_config"] = ThinkingConfig(include_thoughts=True)
     
     # Generate edited image
     response = client.models.generate_content(
@@ -630,23 +629,22 @@ def edit_image_region(
     
     pil_image = edited_image._pil_image
     
-    # Save edited image - replace original if we have the original path, otherwise create new file
-    if original_file_path and os.path.exists(original_file_path):
-        output_path = Path(original_file_path)
-        pil_image.save(output_path)
-    else:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        unique_id = str(uuid.uuid4())[:8]
-        filename = f"edited_{timestamp}_{unique_id}.png"
-        output_path = OUTPUT_DIR / filename
-        pil_image.save(output_path)
+    # Always save edited image to a NEW unique file (never overwrite original)
+    # This ensures each version has its own immutable file for history tracking
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    unique_id = str(uuid.uuid4())[:8]
+    filename = f"edited_{timestamp}_{unique_id}.png"
+    output_path = OUTPUT_DIR / filename
+    pil_image.save(output_path)
     
-    reasoning_output = _collect_reasoning_text(response) if include_reasoning else ""
+    reasoning_output = _collect_reasoning_text(response)
     
-    # Return the PIL Image object directly - Gradio can display it and serve it via /file= endpoint
-    # The image is also saved to outputs/ for persistence (replacing original if applicable)
+    # Return the file path string - Gradio can display it and serve it via /file= endpoint
+    # Using the saved file path ensures each version has its own unique, immutable file
     print("Reasoning output (edit):", reasoning_output)
-    return pil_image, reasoning_output
+    print(f"Saved edited image to: {output_path}")
+    # Return the absolute path as a string - Gradio will handle serving it
+    return str(output_path), reasoning_output
 
 
 with gr.Blocks(title="Fashion Moodboard", css="""
