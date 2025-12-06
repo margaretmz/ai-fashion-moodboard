@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 
-function BoundingBoxSelector({ imageUrl, bbox, onBboxChange }) {
+function BoundingBoxSelector({ imageUrl, bbox, onBboxChange, disabled = false }) {
   const [isDrawing, setIsDrawing] = useState(false)
   const [startPos, setStartPos] = useState(null)
   const [hasMoved, setHasMoved] = useState(false) // Track if mouse moved during drag
@@ -105,6 +105,7 @@ function BoundingBoxSelector({ imageUrl, bbox, onBboxChange }) {
   }
 
   const handleMouseDown = (e) => {
+    if (disabled) return
     const pos = getMousePos(e)
     setStartPos(pos)
     setIsDrawing(true)
@@ -112,7 +113,7 @@ function BoundingBoxSelector({ imageUrl, bbox, onBboxChange }) {
   }
 
   const handleMouseMove = (e) => {
-    if (!isDrawing || !startPos) return
+    if (disabled || !isDrawing || !startPos) return
     
     const pos = getMousePos(e)
     // Check if mouse has moved a meaningful distance (at least 5 pixels)
@@ -132,6 +133,7 @@ function BoundingBoxSelector({ imageUrl, bbox, onBboxChange }) {
   }
 
   const handleMouseUp = () => {
+    if (disabled) return
     // If user just clicked (didn't drag), clear the bbox
     if (isDrawing && startPos && !hasMoved) {
       onBboxChange(null)
@@ -150,7 +152,7 @@ function BoundingBoxSelector({ imageUrl, bbox, onBboxChange }) {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        className="max-w-full max-h-full cursor-crosshair"
+        className={`max-w-full max-h-full ${disabled ? 'cursor-default' : 'cursor-crosshair'}`}
         style={{ objectFit: 'contain' }}
       />
     </div>

@@ -1,4 +1,4 @@
-function Header({ selectedModel, onModelChange, includeReasoning, onIncludeReasoningChange }) {
+function Header({ selectedModel, onModelChange }) {
   return (
     <header className="bg-white border-b border-gray-200 z-10">
       <div className="container mx-auto px-6 py-3">
@@ -8,19 +8,6 @@ function Header({ selectedModel, onModelChange, includeReasoning, onIncludeReaso
           </h1>
           
           <div className="flex items-center gap-6">
-            <div className="flex items-center">
-              <input
-                id="reasoning-checkbox"
-                type="checkbox"
-                checked={includeReasoning}
-                onChange={(e) => onIncludeReasoningChange(e.target.checked)}
-                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label htmlFor="reasoning-checkbox" className="ml-2 text-sm font-medium text-gray-700">
-                Show reasoning trace
-              </label>
-            </div>
-
             <div className="flex items-center gap-3">
               <label className="text-sm font-medium text-gray-700">
                 Model:
