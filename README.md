@@ -66,7 +66,7 @@ The frontend will start at `http://localhost:3000`
 ## Project Structure
 
 - `mb_app.py` - Main Gradio backend application
-- `app.py` - Reference implementation
+- `ref_app.py` - Reference implementation
 - `frontend/` - React frontend application
 - `prompt_templates/` - Prompt templates for generation and editing
 - `outputs/` - Generated images are saved here
