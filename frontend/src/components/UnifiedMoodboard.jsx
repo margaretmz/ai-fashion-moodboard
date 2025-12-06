@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { generateImage, editImageRegion, getImageUrl } from '../services/api'
 import BoundingBoxSelector from './BoundingBoxSelector'
+import ReasoningTracesBar from './ReasoningTracesBar'
+import HistoryPanel from './HistoryPanel'
 
-function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning }) {
+function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning, onReasoningChange }) {
   const [currentImage, setCurrentImage] = useState(null)
   const [inputText, setInputText] = useState('')
   const [loading, setLoading] = useState(false)
@@ -11,6 +13,10 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning }) {
   const [imageUrl, setImageUrl] = useState(null)
   const [isEditMode, setIsEditMode] = useState(false)
   const [reasoningTrace, setReasoningTrace] = useState('') // New state for reasoning trace
+  const [history, setHistory] = useState([]) // History of all versions
+  const [historyOpen, setHistoryOpen] = useState(false) // History panel visibility
+  const [selectedVersionId, setSelectedVersionId] = useState(null) // ID of currently selected/active version
+  const [isViewMode, setIsViewMode] = useState(false) // Track if we're viewing a non-active entry (read-only)
   const inputRef = useRef(null)
   
   // Detect if running on Mac
@@ -47,6 +53,9 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning }) {
       return
     }
 
+    // Exit view mode when submitting (user is creating new content)
+    setIsViewMode(false)
+
     setLoading(true)
     setError(null)
     setReasoningTrace('') // Clear previous reasoning on new submission
@@ -71,16 +80,31 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning }) {
           selectedModel,
           includeReasoning
         )
-        setCurrentImage(response.image)
-        setReasoningTrace(response.reasoning)
+        
+        // Add to history (store snapshot of image, reasoning, and bbox)
+        addToHistory(response.image, 'edit', inputText, response.reasoning, bbox)
+        
+        // Create an "active" duplicate entry for continued editing (without reasoning/bbox)
+        // and automatically select it to clear reasoning/bbox
+        const activeEntry = createActiveEntry(response.image)
+        handleSelectVersion(activeEntry) // Select active entry to clear reasoning/bbox and enable editing
+        
         setInputText('') // Clear input after edit
         // Optionally clear bbox after edit
         // setBbox(null)
       } else {
         // Generate mode: create new image
         const response = await generateImage(inputText, selectedModel, includeReasoning)
-        setCurrentImage(response.image)
-        setReasoningTrace(response.reasoning)
+        
+        // Add to history (store snapshot of image, reasoning, and bbox)
+        // For generation, bbox is null initially
+        addToHistory(response.image, 'generate', inputText, response.reasoning, null)
+        
+        // Create an "active" duplicate entry for continued editing (without reasoning/bbox)
+        // and automatically select it to clear reasoning/bbox
+        const activeEntry = createActiveEntry(response.image)
+        handleSelectVersion(activeEntry) // Select active entry to clear reasoning/bbox and enable editing
+        
         setInputText('') // Clear input after generation
       }
     } catch (err) {
@@ -91,6 +115,9 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning }) {
   }
 
   const handleKeyDown = (e) => {
+    // Disable submission in view mode
+    if (isViewMode) return
+    
     // Submit on Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux)
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault()
@@ -99,22 +126,174 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning }) {
     // Allow Enter key to create new lines normally (no preventDefault)
   }
 
+  // Add item to history - create a snapshot to avoid reference issues
+  const addToHistory = (image, type, prompt, reasoning, bbox) => {
+    // Extract image data as primitives to avoid reference issues
+    // Store the essential properties as separate values
+    // The backend now returns file paths as strings, so extract the filename
+    let imagePath = null
+    let imageUrl = null
+    
+    if (typeof image === 'string') {
+      // Backend returns file path as string - extract just the filename
+      imagePath = image.split('/').pop().split('\\').pop() // Get filename from path
+      imageUrl = getImageUrl(image) // Construct URL from full path
+    } else if (typeof image === 'object' && image !== null) {
+      // Handle Gradio response object (fallback for compatibility)
+      imageUrl = getImageUrl(image)
+      imagePath = image.path || (image.url ? image.url.split('/').pop().split('=').pop() : null)
+    }
+    
+    // Create a snapshot object with primitive values
+    const imageSnapshot = {
+      url: imageUrl,
+      path: imagePath // Store just the filename for reliable restoration
+    }
+    
+    // Store bbox as a snapshot (copy, not reference)
+    const bboxSnapshot = bbox ? {
+      x1: bbox.x1,
+      y1: bbox.y1,
+      x2: bbox.x2,
+      y2: bbox.y2
+    } : null
+    
+    const historyItem = {
+      id: Date.now() + Math.random(), // Unique ID
+      image: imageSnapshot, // Store snapshot with primitive values, not references
+      type: type, // 'generate' or 'edit'
+      prompt: prompt,
+      reasoning: reasoning || '', // Store reasoning trace
+      bbox: bboxSnapshot, // Store bbox snapshot
+      isActive: false, // Regular history entry
+      timestamp: new Date().toISOString()
+    }
+    setHistory(prev => [historyItem, ...prev]) // Add to beginning (newest first)
+    return historyItem // Return the item so we can track its ID
+  }
+
+  // Create an "active" entry - duplicate of latest for continued editing
+  // Removes any existing active entries first to ensure only one active entry exists
+  // Returns the active item so it can be selected
+  const createActiveEntry = (image) => {
+    // Extract image data as primitives
+    // The backend now returns file paths as strings, so extract the filename
+    let imagePath = null
+    let imageUrl = null
+    
+    if (typeof image === 'string') {
+      // Backend returns file path as string - extract just the filename
+      imagePath = image.split('/').pop().split('\\').pop() // Get filename from path
+      imageUrl = getImageUrl(image) // Construct URL from full path
+    } else if (typeof image === 'object' && image !== null) {
+      // Handle Gradio response object (fallback for compatibility)
+      imageUrl = getImageUrl(image)
+      imagePath = image.path || (image.url ? image.url.split('/').pop().split('=').pop() : null)
+    }
+    
+    const imageSnapshot = {
+      url: imageUrl,
+      path: imagePath // Store just the filename for reliable restoration
+    }
+    
+    const activeItem = {
+      id: Date.now() + Math.random() + 0.5, // Unique ID (slightly different to avoid conflicts)
+      image: imageSnapshot,
+      type: 'active', // Mark as active
+      prompt: '', // No prompt for active entry
+      reasoning: '', // No reasoning for active entry (user will edit next)
+      bbox: null, // No bbox for active entry (user will draw next)
+      isActive: true, // Mark as active entry
+      timestamp: new Date().toISOString()
+    }
+    
+    // Remove any existing active entries first, then add new active entry
+    setHistory(prev => {
+      const withoutActive = prev.filter(item => !item.isActive)
+      // Add new active entry at the beginning
+      return [activeItem, ...withoutActive]
+    })
+    
+    // Return the active item so it can be selected
+    return activeItem
+  }
+
+  // Restore version from history
+  const handleSelectVersion = (historyItem) => {
+    // Reconstruct image object from stored snapshot
+    // Use the stored filename to construct the full path
+    const filename = historyItem.image.path
+    if (!filename) {
+      console.error('Cannot restore image: no filename in history item', historyItem)
+      return
+    }
+    
+    // Construct the full file path (assuming files are in outputs/ directory)
+    // The backend serves files via /gradio_api/file= endpoint with just the filename
+    const restoredImage = {
+      url: historyItem.image.url || getImageUrl(filename), // Use stored URL or construct from filename
+      path: filename // Store just the filename
+    }
+    
+    setCurrentImage(restoredImage)
+    
+    // If this is an "active" entry, enable editing (not view mode)
+    if (historyItem.isActive) {
+      setIsViewMode(false) // Enable interactions
+      setReasoningTrace('') // Clear reasoning for active entry
+      setBbox(null) // Clear bbox for active entry
+    } else {
+      // Regular history entry: view mode (read-only)
+      setIsViewMode(true) // Disable interactions
+      setReasoningTrace(historyItem.reasoning || '') // Restore reasoning trace for viewing
+      
+      // Restore bbox if it exists (for display only)
+      if (historyItem.bbox) {
+        setBbox({
+          x1: historyItem.bbox.x1,
+          y1: historyItem.bbox.y1,
+          x2: historyItem.bbox.x2,
+          y2: historyItem.bbox.y2
+        })
+      } else {
+        setBbox(null) // Clear bbox if no bbox was stored
+      }
+    }
+    
+    setSelectedVersionId(historyItem.id) // Mark this version as selected
+    // Don't move item to top - keep it in place so highlighting works correctly
+  }
+
   return (
-    <div className="flex flex-col flex-1 bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+    <div className="flex flex-col flex-1 bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden relative">
+      {/* History Panel */}
+      <HistoryPanel
+        history={history}
+        onSelectVersion={handleSelectVersion}
+        isOpen={historyOpen}
+        onToggle={() => setHistoryOpen(!historyOpen)}
+        selectedVersionId={selectedVersionId}
+      />
       {/* Main Image Display Area */}
       <div className="flex-1 flex items-center justify-center p-4 overflow-hidden min-h-0 relative">
         {imageUrl ? (
           <div className="relative w-full h-full flex items-center justify-center">
-            <div className="relative w-full h-full flex items-center justify-center border-2 border-gray-200 rounded-lg overflow-hidden shadow-2xl bg-gray-50">
+            <div className="relative w-full h-full flex items-center justify-center border-2 border-gray-200 rounded-lg overflow-hidden shadow-2xl bg-gray-50" style={{ filter: 'blur(0.5px)' }}>
               <BoundingBoxSelector
                 imageUrl={imageUrl}
                 bbox={bbox}
                 onBboxChange={setBbox}
+                disabled={isViewMode}
               />
             </div>
-            {isEditMode && !loading && (
+            {isEditMode && !loading && !isViewMode && (
               <div className="absolute top-4 left-4 bg-blue-600 text-white text-sm px-4 py-2 rounded-lg shadow-lg z-10">
                 Edit Mode: {bbox ? 'Region selected' : 'Click and drag to select region (optional)'}
+              </div>
+            )}
+            {isViewMode && (
+              <div className="absolute top-4 left-4 bg-gray-600 text-white text-sm px-4 py-2 rounded-lg shadow-lg z-10">
+                View Mode: Select 'Active' entry to continue editing
               </div>
             )}
           </div>
@@ -205,26 +384,30 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning }) {
       </div>
 
       {/* Bottom Input Area */}
-      <div className="bg-white border-t border-gray-200 shadow-lg p-4">
-        <div className="max-w-4xl mx-auto">
-          {error && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
-            </div>
-          )}
-          
-          <div className="flex gap-3 items-end">
+      <div className="bg-white border-t border-gray-200 shadow-lg">
+        <ReasoningTracesBar reasoningTrace={reasoningTrace} />
+        <div className="p-4">
+          <div className="max-w-4xl mx-auto">
+            {error && (
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                {error}
+              </div>
+            )}
+            
+            <div className="flex gap-3 items-end">
             <div className="flex-1">
               <textarea
                 ref={inputRef}
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={handleKeyDown}
-                disabled={loading}
+                disabled={loading || isViewMode}
                 placeholder={
-                  isEditMode 
-                    ? "Describe what you want to change (optional: click and drag on image to select a specific region)... Press Cmd+Enter or Ctrl+Enter to submit" 
-                    : "e.g., sustainable luxury dress collection. Press Cmd+Enter or Ctrl+Enter to generate"
+                  isViewMode
+                    ? "View mode: Select 'Active' entry to continue editing"
+                    : isEditMode 
+                      ? "Describe what you want to change (optional: click and drag on image to select a specific region)... Press Cmd+Enter or Ctrl+Enter to submit" 
+                      : "e.g., sustainable luxury dress collection. Press Cmd+Enter or Ctrl+Enter to generate"
                 }
                 rows={3}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-base disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -242,22 +425,12 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning }) {
               Optional: Click and drag on the image to select a specific region, or leave empty to edit the entire image
             </p>
           )}
-          <p className="text-xs text-gray-400 mt-1 text-center">
-            {isMac ? '⌘' : 'Ctrl'}+Enter to submit • Enter for new line
-          </p>
-        </div>
-      </div>
-
-      {includeReasoning && reasoningTrace && (
-        <div className="bg-white border-t border-gray-200 shadow-lg p-4 mt-4">
-          <div className="max-w-4xl mx-auto">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">Reasoning Trace:</h3>
-            <div className="bg-gray-100 p-3 rounded-lg overflow-x-auto text-sm text-gray-700 whitespace-pre-wrap">
-              {reasoningTrace}
-            </div>
+            <p className="text-xs text-gray-400 mt-1 text-center">
+              {isMac ? '⌘' : 'Ctrl'}+Enter to submit • Enter for new line
+            </p>
           </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }
