@@ -690,10 +690,6 @@ with gr.Blocks(title="Fashion Moodboard", css="""
                 value=DEFAULT_MODEL_ID,
                 label="Model",
             )
-            reasoning_checkbox = gr.Checkbox(
-                label="Show reasoning trace",
-                value=False,
-            )
         with gr.Tabs():
             with gr.Tab("Generation Template"):
                 prompt_template_component = gr.Textbox(
@@ -789,7 +785,7 @@ with gr.Blocks(title="Fashion Moodboard", css="""
     # Set up the click handler
     send_button.click(
         fn=generate_image,
-        inputs=[prompt_input, model_selector, prompt_template_component, reasoning_checkbox],
+        inputs=[prompt_input, model_selector, prompt_template_component],
         outputs=[image_display, reasoning_display],
         api_name="generate_image",
     )
@@ -797,7 +793,7 @@ with gr.Blocks(title="Fashion Moodboard", css="""
     # Also allow Enter key to submit
     prompt_input.submit(
         fn=generate_image,
-        inputs=[prompt_input, model_selector, prompt_template_component, reasoning_checkbox],
+        inputs=[prompt_input, model_selector, prompt_template_component],
         outputs=[image_display, reasoning_display],
         api_name="generate_image_1",
     )
@@ -815,7 +811,6 @@ with gr.Blocks(title="Fashion Moodboard", css="""
             edit_request_input,
             model_selector,
             edit_template_component,
-            reasoning_checkbox,
         ],
         outputs=[image_display, reasoning_display],
         api_name="edit_image_region",
