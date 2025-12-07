@@ -96,6 +96,16 @@ The outputs always contain the [reasoning](https://ai.google.dev/gemini-api/docs
 
 Even though we provide choosing between 3.0 Pro and 2.5 Flash, we haven't fully experimented with above-mentioned features along with 2.5 Flash. Users are welcome to run experiments and report issues should they find any.
 
+## Challenges faced
+
+**Lack of documentation**
+
+The main source of [documentation](https://ai.google.dev/gemini-api/docs/image-generation) for image generation shows that specifying `response_modalities=['TEXT', 'IMAGE']` is enough to obtain reasoning traces in the outputs. But in reality, that wasn't the case. We had to
+make use of a `ThinkingConfig` to obtain those traces.
+
+It also wasn't clear how to define and configure `tools` in the right way. Providing some
+concrete examples for enabling tooling for image generation would have been really helpful.
+
 ## Acknowledgements
 
 Thanks to the Google ML Developers Program for providing GCP credits that supported this project.
