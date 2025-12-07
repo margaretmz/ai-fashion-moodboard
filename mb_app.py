@@ -758,12 +758,10 @@ with gr.Blocks(title="Fashion Moodboard", css="""
                 show_label=False,
                 container=True,
             )
-            reasoning_display = gr.Textbox(
-                label="Reasoning Trace",
-                value="",
-                lines=6,
-                interactive=False,
-            )
+            with gr.Accordion("Reasoning Trace", open=False):
+                reasoning_display = gr.Markdown(
+                    value="",
+                )
     
     # Input area at bottom center (1 part of height ratio)
     with gr.Row(elem_classes=["input-section"]):
