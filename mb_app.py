@@ -347,7 +347,7 @@ def _get_client() -> genai.Client:
     return genai.Client(api_key=api_key)
 
 
-def _generate_single_image(prompt: str, model_id: str, include_reasoning: bool = False):
+def _generate_single_image(prompt: str, model_id: str):
     tools = None
     if _contains_real_time_info(prompt):
         print(f"{prompt} likely contains some info that could benefit from search-grounding.")
@@ -378,7 +378,7 @@ def _generate_single_image(prompt: str, model_id: str, include_reasoning: bool =
     return image, reasoning_text
 
 
-def generate_image(user_input: str, model_id: str, template: str, include_reasoning: bool):
+def generate_image(user_input: str, model_id: str, template: str):
     """Generate image using the prompt template with user input"""
     user_input = user_input.strip()
     if not user_input:
@@ -391,11 +391,7 @@ def generate_image(user_input: str, model_id: str, template: str, include_reason
     # Build the full prompt from template
     full_prompt = _build_prompt(user_input, template)
     
-    image, reasoning_text = _generate_single_image(
-        full_prompt,
-        model_id=model_id,
-        include_reasoning=include_reasoning,
-    )
+    image, reasoning_text = _generate_single_image(full_prompt, model_id=model_id)
     
     if not image:
         raise gr.Error("The model did not return any image data. Please try again.")
@@ -428,14 +424,12 @@ def edit_image_region(
     edit_request: str,
     model_id: str,
     edit_template: str,
-    include_reasoning: bool,
 ):
     """Edit a specific region of the image defined by bounding box, or entire image if bbox is None"""
     from PIL import Image
     
     # Priority: use image_path_file if provided (for API), otherwise use current_image (for UI)
     image_to_edit = None
-    original_file_path = None  # Track original file path to replace it with edited version
     
     if image_path_file and image_path_file.strip():
         # Textbox returns a string path
@@ -468,8 +462,6 @@ def edit_image_region(
         
         if os.path.exists(file_path):
             image_to_edit = Image.open(file_path)
-            # Store the original file path for later (to replace the file)
-            original_file_path = file_path
         else:
             raise gr.Error(f"Image file not found: {file_path}")
     elif current_image is not None:
@@ -492,7 +484,6 @@ def edit_image_region(
             if not os.path.exists(file_path):
                 raise gr.Error(f"Image file not found: {file_path}")
             image_to_edit = Image.open(file_path)
-            original_file_path = file_path
         elif hasattr(current_image, 'size'):
             # It's a PIL Image - we can't track the original path, so we'll create a new file
             image_to_edit = current_image
@@ -583,6 +574,10 @@ def edit_image_region(
         edit_request, edit_template,
         img_width=img_width, img_height=img_height, has_bbox=has_bbox
     )
+    tools = None
+    if _contains_real_time_info(edit_prompt):
+        print(f"{edit_prompt} likely contains some info that could benefit from search-grounding.")
+        tools = [{"google_search": {}}]
     
     client = _get_client()
     
@@ -615,6 +610,8 @@ def edit_image_region(
     image_config = types.ImageConfig(**image_config)
     config_kwargs["image_config"] = image_config
     config_kwargs["thinking_config"] = ThinkingConfig(include_thoughts=True)
+    if tools:
+        config_kwargs["tools"] = tools
     
     # Generate edited image
     response = client.models.generate_content(
@@ -693,10 +690,6 @@ with gr.Blocks(title="Fashion Moodboard", css="""
                 value=DEFAULT_MODEL_ID,
                 label="Model",
             )
-            reasoning_checkbox = gr.Checkbox(
-                label="Show reasoning trace",
-                value=False,
-            )
         with gr.Tabs():
             with gr.Tab("Generation Template"):
                 prompt_template_component = gr.Textbox(
@@ -765,12 +758,8 @@ with gr.Blocks(title="Fashion Moodboard", css="""
                 show_label=False,
                 container=True,
             )
-            reasoning_display = gr.Textbox(
-                label="Reasoning Trace",
-                value="",
-                lines=6,
-                interactive=False,
-            )
+            with gr.Accordion("Reasoning Trace", open=False):
+                reasoning_display = gr.Markdown(value="")
     
     # Input area at bottom center (1 part of height ratio)
     with gr.Row(elem_classes=["input-section"]):
@@ -792,7 +781,7 @@ with gr.Blocks(title="Fashion Moodboard", css="""
     # Set up the click handler
     send_button.click(
         fn=generate_image,
-        inputs=[prompt_input, model_selector, prompt_template_component, reasoning_checkbox],
+        inputs=[prompt_input, model_selector, prompt_template_component],
         outputs=[image_display, reasoning_display],
         api_name="generate_image",
     )
@@ -800,7 +789,7 @@ with gr.Blocks(title="Fashion Moodboard", css="""
     # Also allow Enter key to submit
     prompt_input.submit(
         fn=generate_image,
-        inputs=[prompt_input, model_selector, prompt_template_component, reasoning_checkbox],
+        inputs=[prompt_input, model_selector, prompt_template_component],
         outputs=[image_display, reasoning_display],
         api_name="generate_image_1",
     )
@@ -818,7 +807,6 @@ with gr.Blocks(title="Fashion Moodboard", css="""
             edit_request_input,
             model_selector,
             edit_template_component,
-            reasoning_checkbox,
         ],
         outputs=[image_display, reasoning_display],
         api_name="edit_image_region",
