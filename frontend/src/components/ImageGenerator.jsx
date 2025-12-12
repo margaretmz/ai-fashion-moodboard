@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { generateImage, getImageUrl } from '../services/api'
 
-function ImageGenerator({ onImageGenerated, selectedModel, currentImage, includeReasoning, apiKey }) {
+function ImageGenerator({ onImageGenerated, selectedModel, currentImage, apiKey }) {
   const [subject, setSubject] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -20,7 +20,7 @@ function ImageGenerator({ onImageGenerated, selectedModel, currentImage, include
     setError(null)
 
     try {
-      const imageData = await generateImage(subject, selectedModel, includeReasoning, apiKey)
+      const imageData = await generateImage(subject, selectedModel, apiKey)
       setGeneratedImage(imageData)
       onImageGenerated(imageData)
     } catch (err) {

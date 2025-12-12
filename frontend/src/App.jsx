@@ -18,7 +18,6 @@ function App() {
       <UnifiedMoodboard 
         selectedModel={selectedModel}
         onImageChange={setCurrentImage}
-        includeReasoning={true}
         apiKey={apiKey}
       />
     </div>

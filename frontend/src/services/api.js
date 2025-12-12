@@ -23,7 +23,7 @@ async function getAPIInfo() {
 }
 
 // Generate image
-export async function generateImage(subject, modelId, includeReasoning, apiKey = "") {
+export async function generateImage(subject, modelId, apiKey = "") {
   await waitForAPI()
   
   try {
@@ -40,7 +40,6 @@ export async function generateImage(subject, modelId, includeReasoning, apiKey =
           subject, // user_input
           modelId, // model_id
           "", // template (empty string = use default)
-          includeReasoning, // include_reasoning
           apiKey || "" // api_key (optional)
         ],
       },
@@ -79,7 +78,7 @@ export async function generateImage(subject, modelId, includeReasoning, apiKey =
 
 // Edit image region
 // bboxCoords can be null/undefined if no region is selected (edit entire image)
-export async function editImageRegion(imagePath, bboxCoords, editRequest, modelId, includeReasoning, apiKey = "") {
+export async function editImageRegion(imagePath, bboxCoords, editRequest, modelId, apiKey = "") {
   await waitForAPI()
   
   try {
@@ -106,7 +105,6 @@ export async function editImageRegion(imagePath, bboxCoords, editRequest, modelI
           editRequest,
           modelId,
           "", // edit_template (empty string = use default)
-          includeReasoning, // include_reasoning
           apiKey || "" // api_key (optional)
         ],
       },

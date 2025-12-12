@@ -350,6 +350,11 @@ def _resolve_api_key(user_api_key: str | None) -> str:
     if api_key:
         return api_key
 
+    if isinstance(user_api_key, bool):
+        user_api_key = None
+    elif user_api_key is not None and not isinstance(user_api_key, str):
+        user_api_key = str(user_api_key)
+
     user_api_key = (user_api_key or "").strip()
     if user_api_key:
         return user_api_key

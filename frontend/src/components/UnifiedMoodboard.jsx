@@ -4,7 +4,7 @@ import BoundingBoxSelector from './BoundingBoxSelector'
 import ReasoningTracesBar from './ReasoningTracesBar'
 import HistoryPanel from './HistoryPanel'
 
-function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning, onReasoningChange, apiKey }) {
+function UnifiedMoodboard({ selectedModel, onImageChange, onReasoningChange, apiKey }) {
   const [currentImage, setCurrentImage] = useState(null)
   const [inputText, setInputText] = useState('')
   const [loading, setLoading] = useState(false)
@@ -78,7 +78,6 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning, onRe
           bboxCoords,
           inputText,
           selectedModel,
-          includeReasoning,
           apiKey
         )
         
@@ -95,7 +94,7 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning, onRe
         // setBbox(null)
       } else {
         // Generate mode: create new image
-        const response = await generateImage(inputText, selectedModel, includeReasoning, apiKey)
+        const response = await generateImage(inputText, selectedModel, apiKey)
         
         // Add to history (store snapshot of image, reasoning, and bbox)
         // For generation, bbox is null initially
