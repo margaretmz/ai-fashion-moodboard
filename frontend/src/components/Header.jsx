@@ -1,4 +1,4 @@
-function Header({ selectedModel, onModelChange }) {
+function Header({ selectedModel, onModelChange, apiKey, onApiKeyChange }) {
   return (
     <header className="bg-white border-b border-gray-200 z-10">
       <div className="container mx-auto px-6 py-3">
@@ -8,6 +8,18 @@ function Header({ selectedModel, onModelChange }) {
           </h1>
           
           <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium text-gray-700">
+                API Key:
+              </label>
+              <input
+                value={apiKey}
+                onChange={(e) => onApiKeyChange(e.target.value)}
+                placeholder="Optional (only if env not set)"
+                type="password"
+                className="w-56 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              />
+            </div>
             <div className="flex items-center gap-3">
               <label className="text-sm font-medium text-gray-700">
                 Model:
@@ -29,4 +41,3 @@ function Header({ selectedModel, onModelChange }) {
 }
 
 export default Header
-

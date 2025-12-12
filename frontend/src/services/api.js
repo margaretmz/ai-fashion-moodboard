@@ -1,7 +1,8 @@
 import axios from 'axios'
 
-// Use Vite proxy in development, or direct URL in production
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '' : 'http://127.0.0.1:7860')
+// Prefer same-origin calls (works on Hugging Face Spaces + local dev via Vite proxy).
+// Override with VITE_API_BASE_URL if you host the backend elsewhere.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
 // Helper to wait for Gradio API to be ready
 async function waitForAPI() {
@@ -22,7 +23,7 @@ async function getAPIInfo() {
 }
 
 // Generate image
-export async function generateImage(subject, modelId, includeReasoning) {
+export async function generateImage(subject, modelId, includeReasoning, apiKey = "") {
   await waitForAPI()
   
   try {
@@ -35,7 +36,13 @@ export async function generateImage(subject, modelId, includeReasoning) {
     const response = await axios.post(
       apiUrl,
       {
-        data: [subject, modelId, "", includeReasoning], // user_input, model_id, template (empty string = use default)
+        data: [
+          subject, // user_input
+          modelId, // model_id
+          "", // template (empty string = use default)
+          includeReasoning, // include_reasoning
+          apiKey || "" // api_key (optional)
+        ],
       },
       {
         headers: {
@@ -72,7 +79,7 @@ export async function generateImage(subject, modelId, includeReasoning) {
 
 // Edit image region
 // bboxCoords can be null/undefined if no region is selected (edit entire image)
-export async function editImageRegion(imagePath, bboxCoords, editRequest, modelId, includeReasoning) {
+export async function editImageRegion(imagePath, bboxCoords, editRequest, modelId, includeReasoning, apiKey = "") {
   await waitForAPI()
   
   try {
@@ -99,7 +106,8 @@ export async function editImageRegion(imagePath, bboxCoords, editRequest, modelI
           editRequest,
           modelId,
           "", // edit_template (empty string = use default)
-          includeReasoning
+          includeReasoning, // include_reasoning
+          apiKey || "" // api_key (optional)
         ],
       },
       {
@@ -145,9 +153,8 @@ export function getImageUrl(filePathOrUrlOrObject) {
       return filePathOrUrlOrObject.url
     } else if (filePathOrUrlOrObject.path) {
       // Construct URL from path (filename)
-      const baseUrl = API_BASE_URL || 'http://127.0.0.1:7860'
       const filename = filePathOrUrlOrObject.path.split('/').pop().split('\\').pop()
-      return `${baseUrl}/gradio_api/file=${filename}`
+      return API_BASE_URL ? `${API_BASE_URL}/gradio_api/file=${filename}` : `/gradio_api/file=${filename}`
     }
     return null
   }
@@ -159,10 +166,7 @@ export function getImageUrl(filePathOrUrlOrObject) {
   
   // If it's a file path (string), extract filename and construct Gradio file URL
   // Backend now returns full file paths, but we only need the filename for Gradio
-  const baseUrl = API_BASE_URL || 'http://127.0.0.1:7860'
-  
   // Extract just the filename from the path (handles both absolute and relative paths)
   const filename = filePathOrUrlOrObject.split('/').pop().split('\\').pop()
-  return `${baseUrl}/gradio_api/file=${filename}`
+  return API_BASE_URL ? `${API_BASE_URL}/gradio_api/file=${filename}` : `/gradio_api/file=${filename}`
 }
-

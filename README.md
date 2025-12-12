@@ -6,7 +6,7 @@ A tool that helps generate unique fashion moodboards to find your next design in
 
 - Python 3.11+ (with conda recommended)
 - Node.js 18+ and npm
-- Google Gemini API key (set as `GEMINI_API_KEY` or `GOOGLE_API_KEY` environment variable)
+- Google Gemini API key (set as `GEMINI_API_KEY` or `GOOGLE_API_KEY` environment variable, or paste it into the UI if running without env vars)
 
 ## Quick Start
 
@@ -45,6 +45,35 @@ npm run dev
 ```
 
 The frontend will start at `http://localhost:3000`
+
+## Deploy on Hugging Face Spaces (Docker)
+
+This repo includes a `Dockerfile` that runs:
+- the Gradio backend internally on port `7861`
+- the React UI + reverse-proxy on port `7860` (the port Spaces expects)
+
+### Steps
+
+1. Create a new Hugging Face Space:
+   - **SDK**: `Docker`
+   - **Space name**: anything you like
+
+2. Push this repository to the Space (either via git or “Files” upload).
+
+3. Add your API key as a Space secret:
+   - `GEMINI_API_KEY` (recommended)
+   - or `GOOGLE_API_KEY`
+
+4. Wait for the Space image to build, then open the Space URL.
+
+### Local Docker run (optional)
+
+```bash
+docker build -t ai-fashion-moodboard .
+docker run --rm -p 7860:7860 -e GEMINI_API_KEY="your-api-key-here" ai-fashion-moodboard
+```
+
+Open `http://127.0.0.1:7860`.
 
 ## Usage
 

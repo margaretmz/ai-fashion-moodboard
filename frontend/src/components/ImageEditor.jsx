@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { editImageRegion, getImageUrl } from '../services/api'
 import BoundingBoxSelector from './BoundingBoxSelector'
 
-function ImageEditor({ image, selectedModel, onImageEdited, includeReasoning }) {
+function ImageEditor({ image, selectedModel, onImageEdited, includeReasoning, apiKey }) {
   const [editRequest, setEditRequest] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -45,7 +45,8 @@ function ImageEditor({ image, selectedModel, onImageEdited, includeReasoning }) 
         bboxCoords,
         editRequest,
         selectedModel,
-        includeReasoning
+        includeReasoning,
+        apiKey
       )
       // Update the parent component with the edited image
       onImageEdited(editedImageData)
@@ -173,4 +174,3 @@ function ImageEditor({ image, selectedModel, onImageEdited, includeReasoning }) 
 }
 
 export default ImageEditor
-
