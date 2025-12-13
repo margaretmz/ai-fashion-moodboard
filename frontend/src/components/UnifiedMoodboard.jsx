@@ -83,10 +83,11 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning, onRe
         
         // Add to history (store snapshot of image, reasoning, and bbox)
         addToHistory(response.image, 'edit', inputText, response.reasoning, bbox)
+        setReasoningTrace(response.reasoning)
         
         // Create an "active" duplicate entry for continued editing (without reasoning/bbox)
         // and automatically select it to clear reasoning/bbox
-        const activeEntry = createActiveEntry(response.image)
+        const activeEntry = createActiveEntry(response.image, response.reasoning)
         handleSelectVersion(activeEntry) // Select active entry to clear reasoning/bbox and enable editing
         
         setInputText('') // Clear input after edit
@@ -99,10 +100,11 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning, onRe
         // Add to history (store snapshot of image, reasoning, and bbox)
         // For generation, bbox is null initially
         addToHistory(response.image, 'generate', inputText, response.reasoning, null)
+        setReasoningTrace(response.reasoning)
         
         // Create an "active" duplicate entry for continued editing (without reasoning/bbox)
         // and automatically select it to clear reasoning/bbox
-        const activeEntry = createActiveEntry(response.image)
+        const activeEntry = createActiveEntry(response.image, response.reasoning)
         handleSelectVersion(activeEntry) // Select active entry to clear reasoning/bbox and enable editing
         
         setInputText('') // Clear input after generation
@@ -175,7 +177,7 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning, onRe
   // Create an "active" entry - duplicate of latest for continued editing
   // Removes any existing active entries first to ensure only one active entry exists
   // Returns the active item so it can be selected
-  const createActiveEntry = (image) => {
+  const createActiveEntry = (image, reasoning = '') => {
     // Extract image data as primitives
     // The backend now returns file paths as strings, so extract the filename
     let imagePath = null
@@ -201,7 +203,7 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning, onRe
       image: imageSnapshot,
       type: 'active', // Mark as active
       prompt: '', // No prompt for active entry
-      reasoning: '', // No reasoning for active entry (user will edit next)
+      reasoning: reasoning, // No reasoning for active entry (user will edit next)
       bbox: null, // No bbox for active entry (user will draw next)
       isActive: true, // Mark as active entry
       timestamp: new Date().toISOString()
@@ -240,7 +242,7 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning, onRe
     // If this is an "active" entry, enable editing (not view mode)
     if (historyItem.isActive) {
       setIsViewMode(false) // Enable interactions
-      setReasoningTrace('') // Clear reasoning for active entry
+      setReasoningTrace(historyItem.reasoning || '') // Clear reasoning for active entry
       setBbox(null) // Clear bbox for active entry
     } else {
       // Regular history entry: view mode (read-only)
