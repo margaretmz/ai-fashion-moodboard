@@ -277,7 +277,19 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning, onRe
         selectedVersionId={selectedVersionId}
       />
       {/* Main Image Display Area */}
-      <div className="flex-1 flex items-center justify-center p-4 overflow-hidden min-h-0 relative">
+      <div className="flex-1 flex flex-col items-center p-4 overflow-hidden min-h-0 relative">
+
+        {isEditMode && !loading && !isViewMode && (
+          <div className="bg-black/40 text-white text-xs px-2 py-1 rounded-lg shadow-lg backdrop-blur-sm self-center mb-2">
+            Edit Mode: {bbox ? 'Region selected' : 'Click and drag to select region (optional)'}
+          </div>
+        )}
+        {isViewMode && (
+          <div className="bg-gray-600 text-white text-sm px-4 py-2 rounded-lg shadow-lg self-center mb-2">
+            View Mode: Select 'Active' entry to continue editing
+          </div>
+        )}
+
         {imageUrl ? (
           <div className="relative w-full h-full flex items-center justify-center">
             <div className="relative w-full h-full flex items-center justify-center border-2 border-gray-200 rounded-lg overflow-hidden shadow-2xl bg-gray-50" style={{ filter: 'blur(0.5px)' }}>
@@ -288,16 +300,6 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning, onRe
                 disabled={isViewMode}
               />
             </div>
-            {isEditMode && !loading && !isViewMode && (
-              <div className="absolute top-4 left-4 bg-blue-600 text-white text-sm px-4 py-2 rounded-lg shadow-lg z-10">
-                Edit Mode: {bbox ? 'Region selected' : 'Click and drag to select region (optional)'}
-              </div>
-            )}
-            {isViewMode && (
-              <div className="absolute top-4 left-4 bg-gray-600 text-white text-sm px-4 py-2 rounded-lg shadow-lg z-10">
-                View Mode: Select 'Active' entry to continue editing
-              </div>
-            )}
           </div>
         ) : (
           <div className="w-full h-full flex items-center justify-center">
