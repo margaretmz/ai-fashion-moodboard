@@ -330,10 +330,10 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning, onRe
               </div>
             ) : (
               <div className="bg-white rounded-lg shadow-lg p-12 text-center max-w-md">
-                <div className="text-6xl mb-4">🎨</div>
+                <img src="/dress-icon.svg" alt="Fashion Moodboard Icon" className="w-16 h-16 mb-4 mx-auto block" />
                 <h2 className="text-2xl font-semibold text-gray-800 mb-2">Create Your Moodboard</h2>
                 <p className="text-gray-600">
-                  Enter a subject description below to generate a beautiful fashion moodboard
+                  Enter a prompt below to generate a beautiful fashion moodboard
                 </p>
               </div>
             )}
