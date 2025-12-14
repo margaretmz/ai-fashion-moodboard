@@ -277,7 +277,19 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning, onRe
         selectedVersionId={selectedVersionId}
       />
       {/* Main Image Display Area */}
-      <div className="flex-1 flex items-center justify-center p-4 overflow-hidden min-h-0 relative">
+      <div className="flex-1 flex flex-col items-center p-4 overflow-hidden min-h-0 relative">
+
+        {isEditMode && !loading && !isViewMode && (
+          <div className="bg-black/40 text-white text-xs px-2 py-1 rounded-lg shadow-lg backdrop-blur-sm self-center mb-2">
+            Edit Mode: {bbox ? 'Region selected' : 'Click and drag to select region (optional)'}
+          </div>
+        )}
+        {isViewMode && (
+          <div className="bg-gray-600 text-white text-sm px-4 py-2 rounded-lg shadow-lg self-center mb-2">
+            View Mode: Select 'Active' entry to continue editing
+          </div>
+        )}
+
         {imageUrl ? (
           <div className="relative w-full h-full flex items-center justify-center">
             <div className="relative w-full h-full flex items-center justify-center border-2 border-gray-200 rounded-lg overflow-hidden shadow-2xl bg-gray-50" style={{ filter: 'blur(0.5px)' }}>
@@ -288,16 +300,6 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning, onRe
                 disabled={isViewMode}
               />
             </div>
-            {isEditMode && !loading && !isViewMode && (
-              <div className="absolute top-4 left-4 bg-blue-600 text-white text-sm px-4 py-2 rounded-lg shadow-lg z-10">
-                Edit Mode: {bbox ? 'Region selected' : 'Click and drag to select region (optional)'}
-              </div>
-            )}
-            {isViewMode && (
-              <div className="absolute top-4 left-4 bg-gray-600 text-white text-sm px-4 py-2 rounded-lg shadow-lg z-10">
-                View Mode: Select 'Active' entry to continue editing
-              </div>
-            )}
           </div>
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -330,10 +332,10 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning, onRe
               </div>
             ) : (
               <div className="bg-white rounded-lg shadow-lg p-12 text-center max-w-md">
-                <div className="text-6xl mb-4">🎨</div>
+                <img src="/dress-icon.svg" alt="Fashion Moodboard Icon" className="w-16 h-16 mb-4 mx-auto block" />
                 <h2 className="text-2xl font-semibold text-gray-800 mb-2">Create Your Moodboard</h2>
                 <p className="text-gray-600">
-                  Enter a subject description below to generate a beautiful fashion moodboard
+                  Enter a prompt below to generate a beautiful fashion moodboard
                 </p>
               </div>
             )}
@@ -408,8 +410,8 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning, onRe
                   isViewMode
                     ? "View mode: Select 'Active' entry to continue editing"
                     : isEditMode 
-                      ? "Describe what you want to change (optional: click and drag on image to select a specific region)... Press Cmd+Enter or Ctrl+Enter to submit" 
-                      : "e.g., sustainable luxury dress collection. Press Cmd+Enter or Ctrl+Enter to generate"
+                      ? "Describe what you would like to change..."
+                      : "Describe the fashion mood or style…"
                 }
                 rows={3}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-base disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -424,7 +426,7 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning, onRe
           )}
           {isEditMode && !bbox && (
             <p className="text-xs text-gray-500 mt-2 text-center">
-              Optional: Click and drag on the image to select a specific region, or leave empty to edit the entire image
+              Optional: Click and drag on the image to select a specific region, or leave empty to edit the entire moodboard
             </p>
           )}
             <p className="text-xs text-gray-400 mt-1 text-center">
