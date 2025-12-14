@@ -410,8 +410,8 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning, onRe
                   isViewMode
                     ? "View mode: Select 'Active' entry to continue editing"
                     : isEditMode 
-                      ? "Describe what you want to change (optional: click and drag on image to select a specific region)... Press Cmd+Enter or Ctrl+Enter to submit" 
-                      : "e.g., sustainable luxury dress collection. Press Cmd+Enter or Ctrl+Enter to generate"
+                      ? "Describe what you would like to change..."
+                      : "Describe the fashion mood or style…"
                 }
                 rows={3}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-base disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -426,7 +426,7 @@ function UnifiedMoodboard({ selectedModel, onImageChange, includeReasoning, onRe
           )}
           {isEditMode && !bbox && (
             <p className="text-xs text-gray-500 mt-2 text-center">
-              Optional: Click and drag on the image to select a specific region, or leave empty to edit the entire image
+              Optional: Click and drag on the image to select a specific region, or leave empty to edit the entire moodboard
             </p>
           )}
             <p className="text-xs text-gray-400 mt-1 text-center">
