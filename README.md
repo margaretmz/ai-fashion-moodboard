@@ -2,7 +2,7 @@
 
 A tool that helps generate unique fashion moodboards to find your next design inspiration using Google Gemini AI.
 
-> [!TIP] Quickly try out the demo on Hugging Face Spaces here 🤗
+> [!TIP] Quickly try out the demo on Hugging Face Spaces [here](https://huggingface.co/spaces/sayakpaul/nb-fashion-moodboard) 🤗
 
 ## Prerequisites
 
