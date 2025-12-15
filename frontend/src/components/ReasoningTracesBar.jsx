@@ -38,16 +38,15 @@ function extractReasoningSections(reasoningText) {
 function ReasoningTracesBar({ reasoningTrace }) {
   const [hoveredIndex, setHoveredIndex] = useState(null)
   const sections = extractReasoningSections(reasoningTrace)
+
+  if (sections.length === 0) {
+    return null
+  }
   
   return (
     <div className="bg-gradient-to-r from-blue-50 via-purple-50 to-blue-50 border-b border-gray-200 shadow-sm relative">
       <div className="w-full py-2.5">
         <div className="max-w-4xl mx-auto px-4">
-          {sections.length === 0 ? (
-            <div className="flex items-center justify-center">
-              <span className="text-xs text-gray-400 italic">No reasoning traces available</span>
-            </div>
-          ) : (
             <div className="flex items-center justify-center gap-0 flex-wrap">
               {sections.map((section, index) => (
               <div 
@@ -90,7 +89,6 @@ function ReasoningTracesBar({ reasoningTrace }) {
               </div>
             ))}
             </div>
-          )}
         </div>
       </div>
     </div>
@@ -98,4 +96,3 @@ function ReasoningTracesBar({ reasoningTrace }) {
 }
 
 export default ReasoningTracesBar
-

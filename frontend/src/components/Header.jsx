@@ -1,4 +1,9 @@
-function Header({ selectedModel, onModelChange }) {
+function Header({
+  selectedModel,
+  onModelChange,
+  apiKey,
+  onApiKeyChange
+}) {
   return (
     <header className="bg-white border-b border-gray-200 z-10">
       <div className="container mx-auto px-6 py-3">
@@ -7,11 +12,19 @@ function Header({ selectedModel, onModelChange }) {
             Fashion Moodboard Generator
           </h1>
           
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <label className="text-sm font-medium text-gray-700">
-                Model:
-              </label>
+          <div className="flex flex-wrap items-center gap-4">
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <span>API Key:</span>
+              <input
+                value={apiKey}
+                onChange={(e) => onApiKeyChange(e.target.value)}
+                placeholder="Optional (only if env not set)"
+                type="password"
+                className="w-56 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              />
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <span>Model:</span>
               <select
                 value={selectedModel}
                 onChange={(e) => onModelChange(e.target.value)}
@@ -20,7 +33,7 @@ function Header({ selectedModel, onModelChange }) {
                 <option value="gemini-3-pro-image-preview">Gemini 3 Pro</option>
                 <option value="gemini-2.5-flash-image">Gemini 2.5 Flash</option>
               </select>
-            </div>
+            </label>
           </div>
         </div>
       </div>
@@ -29,4 +42,3 @@ function Header({ selectedModel, onModelChange }) {
 }
 
 export default Header
-

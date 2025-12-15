@@ -340,20 +340,42 @@ def _collect_reasoning_text(response):
 
 
 @lru_cache(maxsize=1)
-def _get_client() -> genai.Client:
+def _env_api_key() -> str | None:
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-    if not api_key:
-        raise gr.Error("Set the GEMINI_API_KEY or GOOGLE_API_KEY environment variable with your Gemini API key.")
+    return api_key.strip() if api_key else None
+
+
+def _resolve_api_key(user_api_key: str | None) -> str:
+    api_key = _env_api_key()
+    if api_key:
+        return api_key
+
+    if isinstance(user_api_key, bool):
+        user_api_key = None
+    elif user_api_key is not None and not isinstance(user_api_key, str):
+        user_api_key = str(user_api_key)
+
+    user_api_key = (user_api_key or "").strip()
+    if user_api_key:
+        return user_api_key
+
+    raise gr.Error(
+        "Missing API key. Set GEMINI_API_KEY or GOOGLE_API_KEY, or paste your key into the UI."
+    )
+
+
+def _get_client(user_api_key: str | None) -> genai.Client:
+    api_key = _resolve_api_key(user_api_key)
     return genai.Client(api_key=api_key)
 
 
-def _generate_single_image(prompt: str, model_id: str):
+def _generate_single_image(prompt: str, model_id: str, user_api_key: str | None):
     tools = None
     if _contains_real_time_info(prompt):
         print(f"{prompt} likely contains some info that could benefit from search-grounding.")
         tools = [{"google_search": {}}]
     
-    client = _get_client()
+    client = _get_client(user_api_key)
     image_config = {"aspect_ratio": DEFAULT_ASPECT_RATIO}
     config_kwargs = {}
 
@@ -378,7 +400,12 @@ def _generate_single_image(prompt: str, model_id: str):
     return image, reasoning_text
 
 
-def generate_image(user_input: str, model_id: str, template: str):
+def generate_image(
+    user_input: str,
+    model_id: str,
+    template: str,
+    api_key: str | None = None,
+):
     """Generate image using the prompt template with user input"""
     user_input = user_input.strip()
     if not user_input:
@@ -391,7 +418,7 @@ def generate_image(user_input: str, model_id: str, template: str):
     # Build the full prompt from template
     full_prompt = _build_prompt(user_input, template)
     
-    image, reasoning_text = _generate_single_image(full_prompt, model_id=model_id)
+    image, reasoning_text = _generate_single_image(full_prompt, model_id=model_id, user_api_key=api_key)
     
     if not image:
         raise gr.Error("The model did not return any image data. Please try again.")
@@ -424,6 +451,7 @@ def edit_image_region(
     edit_request: str,
     model_id: str,
     edit_template: str,
+    api_key: str | None = None,
 ):
     """Edit a specific region of the image defined by bounding box, or entire image if bbox is None"""
     from PIL import Image
@@ -579,7 +607,7 @@ def edit_image_region(
         print(f"{edit_prompt} likely contains some info that could benefit from search-grounding.")
         tools = [{"google_search": {}}]
     
-    client = _get_client()
+    client = _get_client(api_key)
     
     # Prepare image for API - convert PIL Image to format expected by Gemini
     import io
@@ -671,6 +699,8 @@ with gr.Blocks(title="Fashion Moodboard", css="""
         gap: 10px;
     }
 """) as demo:
+    env_api_key_present = _env_api_key() is not None
+
     # Load default template content
     try:
         default_template = _load_prompt_template()
@@ -683,6 +713,19 @@ with gr.Blocks(title="Fashion Moodboard", css="""
         default_edit_template = f"Error loading edit template: {str(e)}"
     
     # Model selector and prompt templates at the top
+    if not env_api_key_present:
+        gr.Markdown(
+            "### API key required\n"
+            "No `GEMINI_API_KEY` / `GOOGLE_API_KEY` found in the environment. "
+            "Paste your Gemini API key below to use the app."
+        )
+    api_key_input = gr.Textbox(
+        label="Gemini API Key",
+        placeholder="Paste your GEMINI_API_KEY / GOOGLE_API_KEY here",
+        type="password",
+        visible=not env_api_key_present,
+    )
+
     with gr.Row():
         with gr.Column(scale=0):
             model_selector = gr.Radio(
@@ -781,7 +824,12 @@ with gr.Blocks(title="Fashion Moodboard", css="""
     # Set up the click handler
     send_button.click(
         fn=generate_image,
-        inputs=[prompt_input, model_selector, prompt_template_component],
+        inputs=[
+            prompt_input,
+            model_selector,
+            prompt_template_component,
+            api_key_input,
+        ],
         outputs=[image_display, reasoning_display],
         api_name="generate_image",
     )
@@ -789,7 +837,12 @@ with gr.Blocks(title="Fashion Moodboard", css="""
     # Also allow Enter key to submit
     prompt_input.submit(
         fn=generate_image,
-        inputs=[prompt_input, model_selector, prompt_template_component],
+        inputs=[
+            prompt_input,
+            model_selector,
+            prompt_template_component,
+            api_key_input,
+        ],
         outputs=[image_display, reasoning_display],
         api_name="generate_image_1",
     )
@@ -807,6 +860,7 @@ with gr.Blocks(title="Fashion Moodboard", css="""
             edit_request_input,
             model_selector,
             edit_template_component,
+            api_key_input,
         ],
         outputs=[image_display, reasoning_display],
         api_name="edit_image_region",
@@ -814,4 +868,8 @@ with gr.Blocks(title="Fashion Moodboard", css="""
 
 
 if __name__ == "__main__":
-    demo.launch(show_error=True, server_name="0.0.0.0", server_port=7860, share=False)
+    import os
+
+    server_port = int(os.environ.get("GRADIO_SERVER_PORT", os.environ.get("PORT", "7860")))
+    server_name = os.environ.get("GRADIO_SERVER_NAME", "0.0.0.0")
+    demo.launch(show_error=True, server_name=server_name, server_port=server_port, share=False)
