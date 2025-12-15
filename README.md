@@ -1,6 +1,6 @@
 ---
 title: NB Fashion Moodboard
-emoji: 💻
+emoji: 👗
 colorFrom: pink
 sdk: docker
 pinned: false
