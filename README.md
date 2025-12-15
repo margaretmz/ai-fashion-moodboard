@@ -1,3 +1,12 @@
+---
+title: NB Fashion Moodboard
+emoji: 💻
+colorFrom: pink
+sdk: docker
+pinned: false
+short_description: Nano Banana powered fashion moodboard
+---
+
 # AI Fashion Moodboard
 
 A tool that helps generate unique fashion moodboards to find your next design inspiration using Google Gemini AI.
