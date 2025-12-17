@@ -121,7 +121,8 @@ The Gradio backend exposes REST APIs at:
 
 See `PRD.md` for detailed API documentation.
 
-## Misc notes
+<details>
+<summary>Misc notes</summary>
 
 ### Search grounding
 
@@ -136,8 +137,11 @@ The outputs always contain the [reasoning](https://ai.google.dev/gemini-api/docs
 ### Gemini 3.0 Pro vs. 2.5 Flash
 
 Even though we provide choosing between 3.0 Pro and 2.5 Flash, we haven't fully experimented with above-mentioned features along with 2.5 Flash. Users are welcome to run experiments and report issues should they find any.
+   
+</details><br>
 
-## Challenges faced
+<details>
+<summary>Challenges faced</summary>
 
 **Lack of documentation**
 
@@ -145,6 +149,12 @@ The main source of [documentation](https://ai.google.dev/gemini-api/docs/image-g
 
 It also wasn't clear how to define and configure `tools` in the right way. Providing some
 concrete examples for enabling tooling for image generation would have been really helpful.
+
+**Higher-resolution with reasoning**
+
+We found out that we cannot go beyond 1K resolution when reasoning is enabled. This can be limiting especially for cases where both higher-resolution outputs and reasoning are desired. 
+   
+</details>
 
 ## Acknowledgements
 
