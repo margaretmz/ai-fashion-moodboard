@@ -12,7 +12,7 @@ short_description: Nano Banana powered fashion moodboard
 A tool that helps generate unique fashion moodboards to find your next design inspiration using Google Gemini AI.
 
 > [!TIP]
-> Quickly try out the demo on Hugging Face Spaces [here](https://huggingface.co/spaces/sayakpaul/nb-fashion-moodboard) 🤗
+> Check out the accompanying blog post on [Medium](https://margaretmz.medium.com/0d5bfd54a557) and Hugging Face [blog](https://huggingface.co/blog/margaretmz/ai-fashion-moodboard). Quickly try out the demo on Hugging Face Spaces [here](https://huggingface.co/spaces/sayakpaul/nb-fashion-moodboard) 🤗
 
 ## Prerequisites
 
@@ -120,41 +120,6 @@ The Gradio backend exposes REST APIs at:
 - `POST /api/edit_image_region` - Edit an existing image
 
 See `PRD.md` for detailed API documentation.
-
-<details>
-<summary>Misc notes</summary>
-
-### Search grounding
-
-Gemini [can ground the results](https://ai.google.dev/gemini-api/docs/image-generation#use-with-grounding) in recency with Google Search. This is compelling, especially for prompts that contain date information, for example. We conditionally enable search grounding, depending on the input prompt. Below is an example of such a prompt:
-
-> Create a layered fashion moodboard collage for a contemporary Indian bridal collection for the 2025-2026 season. The aesthetic theme is "The Modern Minimalist Bride: Ethereal Lightness".
-
-### Reasoning traces
-
-The outputs always contain the [reasoning](https://ai.google.dev/gemini-api/docs/thinking) Gemini used to arrive at the final output. This is particularly beneficial for this project, because the intricacies in fashion could be quite complex. Therefore, it helps the users to understand why and how Gemini reacted to input prompt.
-
-### Gemini 3.0 Pro vs. 2.5 Flash
-
-Even though we provide choosing between 3.0 Pro and 2.5 Flash, we haven't fully experimented with above-mentioned features along with 2.5 Flash. Users are welcome to run experiments and report issues should they find any.
-   
-</details><br>
-
-<details>
-<summary>Challenges faced</summary>
-
-**Lack of documentation**
-
-The main source of [documentation](https://ai.google.dev/gemini-api/docs/image-generation) for image generation shows that specifying `response_modalities=['TEXT', 'IMAGE']` is enough to obtain reasoning traces in the outputs. But in reality, that wasn't the case. We had to make use of a `ThinkingConfig` to obtain those traces.
-
-It also wasn't clear how to define and configure `tools` in the right way. Providing some
-concrete examples for enabling tooling for image generation would have been really helpful.
-
-**Higher-resolution with reasoning**
-
-We found out that we cannot go beyond 1K resolution when reasoning is enabled. This can be limiting especially for cases where both higher-resolution outputs and reasoning are desired. 
-   
-</details>
 
 ## Acknowledgements
 
