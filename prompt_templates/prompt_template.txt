@@ -3,6 +3,7 @@ Fashion Moodboard for {SUBJECT_PLACEHOLDER}
 
 **[CRITICAL CONSTRAINTS]**
 **NO TEXT:** The final output must not contain any text, labels, letters, or placeholder words inside the grid boxes. All placeholders must be replaced by visual imagery.
+**NO DECORATIONS:** The final output must have no connecting lines, arrows, or triangles between the frames.
 
 **[Layout Configuration]**
 Reference Layout: Follow the exact geometric 2x4 grid structure shown in the attached image.
