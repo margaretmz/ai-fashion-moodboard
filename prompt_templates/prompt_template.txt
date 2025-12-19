@@ -12,13 +12,13 @@ Spacing: Clean, consistent white spacing between all 8 panels.
 
 **[Row 1: The Look (Top Half)]**
 Composition: 4 distinct vertical portrait images (Aspect Ratio approx 2:4).
-Borders: Thin. Black. Solid. Pointy borders without styles around each image.
+Borders: Ultra-thin. Gray #808080. Solid. Pointy borders without styles around each image.
 Visual Weight: These images must appear significantly taller than the bottom row.
 Content: Full-body or 3/4 editorial shots of fashion models wearing earthy, textural garments related to the theme.
 
 **[Row 2: The Details (Bottom Half)]**
 Composition: 4 square images (Aspect Ratio 1:1).
-Borders: Thin. Black. Solid. Pointy borders without styles around each image.
+Borders: Ultra-thin. Gray #808080. Solid. Pointy borders without styles around each image.
 Image 1 (Leftmost): Detailed close-up product shot of a key accessory
 Image 2 (Center-Left): Detailed close-up product shot of footwear or secondary metal/stone jewelry.
 Image 3 (Center-Right): Macro photography filling the frame with raw fabric texture
