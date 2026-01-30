@@ -11,14 +11,14 @@ Canvas Size: 1440x1024
 Spacing: Clean, consistent white spacing between all 8 panels.
 
 **[Row 1: The Look (Top Half)]**
-Composition: 4 distinct vertical portrait images (Aspect Ratio approx 2:4).
-Borders: Ultra-thin. Gray #808080. Solid. Pointy borders without styles around each image.
-Visual Weight: These images must appear significantly taller than the bottom row.
+Composition: 4 distinct vertical portrait images (Aspect Ratio: Exactly 3:4).
+Borders: Hairline, 1-pixel wide. Subtle gray #808080. Solid. Pointy borders without styles around each image.
+Visual Weight: The top row should occupy approximately 60% of the total vertical height of the frame.
 Content: Full-body or 3/4 editorial shots of fashion models wearing earthy, textural garments related to the theme.
 
 **[Row 2: The Details (Bottom Half)]**
-Composition: 4 square images (Aspect Ratio 1:1).
-Borders: Ultra-thin. Gray #808080. Solid. Pointy borders without styles around each image.
+Composition: 4 images (Aspect Ratio approximately 1.1:1, slightly wider than square).
+Borders: Hairline, 1-pixel wide. Subtle gray #808080. Solid. Pointy borders without styles around each image.
 Image 1 (Leftmost): Detailed close-up product shot of a key accessory
 Image 2 (Center-Left): Detailed close-up product shot of footwear or secondary metal/stone jewelry.
 Image 3 (Center-Right): Macro photography filling the frame with raw fabric texture
