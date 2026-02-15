@@ -18,7 +18,7 @@ function UnifiedMoodboard({ selectedModel, onImageChange, onReasoningChange, api
   const [selectedVersionId, setSelectedVersionId] = useState(null) // ID of currently selected/active version
   const [isViewMode, setIsViewMode] = useState(false) // Track if we're viewing a non-active entry (read-only)
   const inputRef = useRef(null)
-  
+
   // Detect if running on Mac
   const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0
 
@@ -64,7 +64,7 @@ function UnifiedMoodboard({ selectedModel, onImageChange, onReasoningChange, api
       if (isEditMode && currentImage) {
         // Edit mode: edit the existing image
         const imagePath = typeof currentImage === 'object' && currentImage.path ? currentImage.path : currentImage
-        
+
         // Pass bbox coordinates only if bbox is selected, otherwise pass null
         const bboxCoords = bbox ? {
           x1: bbox.x1,
@@ -72,7 +72,7 @@ function UnifiedMoodboard({ selectedModel, onImageChange, onReasoningChange, api
           x2: bbox.x2,
           y2: bbox.y2
         } : null
-        
+
         const response = await editImageRegion(
           imagePath,
           bboxCoords,
@@ -80,33 +80,33 @@ function UnifiedMoodboard({ selectedModel, onImageChange, onReasoningChange, api
           selectedModel,
           apiKey
         )
-        
+
         // Add to history (store snapshot of image, reasoning, and bbox)
         addToHistory(response.image, 'edit', inputText, response.reasoning, bbox)
         setReasoningTrace(response.reasoning)
-        
+
         // Create an "active" duplicate entry for continued editing (without reasoning/bbox)
         // and automatically select it to clear reasoning/bbox
         const activeEntry = createActiveEntry(response.image, response.reasoning)
         handleSelectVersion(activeEntry) // Select active entry to clear reasoning/bbox and enable editing
-        
+
         setInputText('') // Clear input after edit
         // Optionally clear bbox after edit
         // setBbox(null)
       } else {
         // Generate mode: create new image
         const response = await generateImage(inputText, selectedModel, apiKey)
-        
+
         // Add to history (store snapshot of image, reasoning, and bbox)
         // For generation, bbox is null initially
         addToHistory(response.image, 'generate', inputText, response.reasoning, null)
         setReasoningTrace(response.reasoning)
-        
+
         // Create an "active" duplicate entry for continued editing (without reasoning/bbox)
         // and automatically select it to clear reasoning/bbox
         const activeEntry = createActiveEntry(response.image, response.reasoning)
         handleSelectVersion(activeEntry) // Select active entry to clear reasoning/bbox and enable editing
-        
+
         setInputText('') // Clear input after generation
       }
     } catch (err) {
@@ -119,7 +119,7 @@ function UnifiedMoodboard({ selectedModel, onImageChange, onReasoningChange, api
   const handleKeyDown = (e) => {
     // Disable submission in view mode
     if (isViewMode) return
-    
+
     // Submit on Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux)
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault()
@@ -135,7 +135,7 @@ function UnifiedMoodboard({ selectedModel, onImageChange, onReasoningChange, api
     // The backend now returns file paths as strings, so extract the filename
     let imagePath = null
     let imageUrl = null
-    
+
     if (typeof image === 'string') {
       // Backend returns file path as string - extract just the filename
       imagePath = image.split('/').pop().split('\\').pop() // Get filename from path
@@ -145,13 +145,13 @@ function UnifiedMoodboard({ selectedModel, onImageChange, onReasoningChange, api
       imageUrl = getImageUrl(image)
       imagePath = image.path || (image.url ? image.url.split('/').pop().split('=').pop() : null)
     }
-    
+
     // Create a snapshot object with primitive values
     const imageSnapshot = {
       url: imageUrl,
       path: imagePath // Store just the filename for reliable restoration
     }
-    
+
     // Store bbox as a snapshot (copy, not reference)
     const bboxSnapshot = bbox ? {
       x1: bbox.x1,
@@ -159,7 +159,7 @@ function UnifiedMoodboard({ selectedModel, onImageChange, onReasoningChange, api
       x2: bbox.x2,
       y2: bbox.y2
     } : null
-    
+
     const historyItem = {
       id: Date.now() + Math.random(), // Unique ID
       image: imageSnapshot, // Store snapshot with primitive values, not references
@@ -182,7 +182,7 @@ function UnifiedMoodboard({ selectedModel, onImageChange, onReasoningChange, api
     // The backend now returns file paths as strings, so extract the filename
     let imagePath = null
     let imageUrl = null
-    
+
     if (typeof image === 'string') {
       // Backend returns file path as string - extract just the filename
       imagePath = image.split('/').pop().split('\\').pop() // Get filename from path
@@ -192,12 +192,12 @@ function UnifiedMoodboard({ selectedModel, onImageChange, onReasoningChange, api
       imageUrl = getImageUrl(image)
       imagePath = image.path || (image.url ? image.url.split('/').pop().split('=').pop() : null)
     }
-    
+
     const imageSnapshot = {
       url: imageUrl,
       path: imagePath // Store just the filename for reliable restoration
     }
-    
+
     const activeItem = {
       id: Date.now() + Math.random() + 0.5, // Unique ID (slightly different to avoid conflicts)
       image: imageSnapshot,
@@ -208,14 +208,14 @@ function UnifiedMoodboard({ selectedModel, onImageChange, onReasoningChange, api
       isActive: true, // Mark as active entry
       timestamp: new Date().toISOString()
     }
-    
+
     // Remove any existing active entries first, then add new active entry
     setHistory(prev => {
       const withoutActive = prev.filter(item => !item.isActive)
       // Add new active entry at the beginning
       return [activeItem, ...withoutActive]
     })
-    
+
     // Return the active item so it can be selected
     return activeItem
   }
@@ -229,16 +229,16 @@ function UnifiedMoodboard({ selectedModel, onImageChange, onReasoningChange, api
       console.error('Cannot restore image: no filename in history item', historyItem)
       return
     }
-    
+
     // Construct the full file path (assuming files are in outputs/ directory)
     // The backend serves files via /gradio_api/file= endpoint with just the filename
     const restoredImage = {
       url: historyItem.image.url || getImageUrl(filename), // Use stored URL or construct from filename
       path: filename // Store just the filename
     }
-    
+
     setCurrentImage(restoredImage)
-    
+
     // If this is an "active" entry, enable editing (not view mode)
     if (historyItem.isActive) {
       setIsViewMode(false) // Enable interactions
@@ -248,7 +248,7 @@ function UnifiedMoodboard({ selectedModel, onImageChange, onReasoningChange, api
       // Regular history entry: view mode (read-only)
       setIsViewMode(true) // Disable interactions
       setReasoningTrace(historyItem.reasoning || '') // Restore reasoning trace for viewing
-      
+
       // Restore bbox if it exists (for display only)
       if (historyItem.bbox) {
         setBbox({
@@ -261,7 +261,7 @@ function UnifiedMoodboard({ selectedModel, onImageChange, onReasoningChange, api
         setBbox(null) // Clear bbox if no bbox was stored
       }
     }
-    
+
     setSelectedVersionId(historyItem.id) // Mark this version as selected
     // Don't move item to top - keep it in place so highlighting works correctly
   }
@@ -341,7 +341,7 @@ function UnifiedMoodboard({ selectedModel, onImageChange, onReasoningChange, api
             )}
           </div>
         )}
-        
+
         {/* Loading Overlay for Image Area */}
         {loading && imageUrl && (
           <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-black/40 to-black/50 backdrop-blur-md flex items-center justify-center z-50 animate-fadeIn">
@@ -363,18 +363,18 @@ function UnifiedMoodboard({ selectedModel, onImageChange, onReasoningChange, api
                   <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-md"></div>
                 </div>
               </div>
-              
+
               {/* Progress Text */}
               <div className="text-center">
                 <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
                   {isEditMode ? 'Editing Image...' : 'Generating Moodboard...'}
                 </h3>
                 <p className="text-gray-600 mb-6 text-base">
-                  {isEditMode 
+                  {isEditMode
                     ? 'Applying your changes to the selected region'
                     : 'Creating your fashion moodboard with AI'}
                 </p>
-                
+
                 {/* Animated Progress Dots */}
                 <div className="flex justify-center gap-2">
                   <div className="w-3 h-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full animate-bounce shadow-md" style={{ animationDelay: '0s' }}></div>
@@ -397,9 +397,8 @@ function UnifiedMoodboard({ selectedModel, onImageChange, onReasoningChange, api
                 {error}
               </div>
             )}
-            
-            <div className="flex gap-3 items-end">
-            <div className="flex-1">
+
+            <div className="relative group">
               <textarea
                 ref={inputRef}
                 value={inputText}
@@ -409,29 +408,43 @@ function UnifiedMoodboard({ selectedModel, onImageChange, onReasoningChange, api
                 placeholder={
                   isViewMode
                     ? "View mode: Select 'Active' entry to continue editing"
-                    : isEditMode 
+                    : isEditMode
                       ? "Describe what you would like to change..."
                       : "Describe the fashion mood or style…"
                 }
                 rows={3}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-base disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full pl-4 pr-14 py-3 border border-gray-300 rounded-2xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-base disabled:bg-gray-50 disabled:cursor-not-allowed transition-all"
               />
+              <button
+                onClick={handleSubmit}
+                disabled={loading || isViewMode || !inputText.trim()}
+                className={`absolute bottom-3 right-3 p-2.5 rounded-xl transition-all duration-300 shadow-sm flex items-center justify-center
+                  ${loading || isViewMode || !inputText.trim()
+                    ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
+                    : 'bg-gradient-to-br from-blue-600 to-purple-600 text-white hover:shadow-md hover:scale-105 active:scale-95'
+                  }`}
+                title={isEditMode ? "Apply Edit" : "Generate Moodboard"}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className={`w-5 h-5 fill-current transform ${!inputText.trim() ? '' : 'translate-x-0.5'}`}
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                </svg>
+              </button>
             </div>
-          </div>
-          
-          {isEditMode && bbox && (
-            <p className="text-xs text-gray-500 mt-2 text-center">
-              Selected region: ({Math.round(bbox.x1)}, {Math.round(bbox.y1)}) to ({Math.round(bbox.x2)}, {Math.round(bbox.y2)}) • Click to clear
-            </p>
-          )}
-          {isEditMode && !bbox && (
-            <p className="text-xs text-gray-500 mt-2 text-center">
-              Optional: Click and drag on the image to select a specific region, or leave empty to edit the entire moodboard
-            </p>
-          )}
-            <p className="text-xs text-gray-400 mt-1 text-center">
-              {isMac ? '⌘' : 'Ctrl'}+Enter to submit • Enter for new line
-            </p>
+
+            {isEditMode && bbox && (
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                Selected region: ({Math.round(bbox.x1)}, {Math.round(bbox.y1)}) to ({Math.round(bbox.x2)}, {Math.round(bbox.y2)}) • Click to clear
+              </p>
+            )}
+            {isEditMode && !bbox && (
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                Optional: Click and drag on the image to select a specific region, or leave empty to edit the entire moodboard
+              </p>
+            )}
           </div>
         </div>
       </div>
